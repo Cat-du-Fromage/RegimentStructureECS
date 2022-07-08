@@ -99,7 +99,7 @@ namespace KaizerWald
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float3 MultiplyPoint3x4(this float4x4 matrix, in float3 point)
+        public static float3 MultiplyPoint3x4(this float4x4 matrix, in float3 point)
         {
             float3 res;
             res.x = matrix.c0.x * point.x + matrix.c0.y * point.y + matrix.c0.z * point.z + matrix.c0.w;
@@ -139,6 +139,7 @@ namespace KaizerWald
         /// <param name="pixelHeight">Camera.pixelHeight</param>
         /// <param name="scaleFactor">Canvas.scaleFactor</param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float2 ConvertWorldToScreenCoordinates(float3 point, float3 cameraPos, float4x4 camProjMatrix, float3 camUp, float3 camRight, float3 camForward, float pixelWidth, float pixelHeight, float scaleFactor)
         {
             /*
@@ -150,7 +151,7 @@ namespace KaizerWald
             /*
             * 2 convert P_camera to P_clipped
             */
-            float4 pointInClipCoordinates = math.mul(camProjMatrix, pointInCameraCoodinates);
+            float4 pointInClipCoordinates = mul(camProjMatrix, pointInCameraCoodinates);
      
             /*
             * 3 convert P_clipped to P_ndc
@@ -170,8 +171,8 @@ namespace KaizerWald
             // return screencoordinates with canvas scale factor (if canvas coords required)
             return pointInScreenCoordinates / scaleFactor;
         }
-     
-        private static float4 ConvertWorldToCameraCoordinates(float3 point, float3 cameraPos, float3 camUp, float3 camRight, float3 camForward)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float4 ConvertWorldToCameraCoordinates(float3 point, float3 cameraPos, float3 camUp, float3 camRight, float3 camForward)
         {
             // translate the point by the negative camera-offset
             //and convert to Vector4
@@ -184,11 +185,22 @@ namespace KaizerWald
             transformationMatrix.c1 = new float4(camRight.y, camUp.y, -camForward.y, 0);
             transformationMatrix.c2 = new float4(camRight.z, camUp.z, -camForward.z, 0);
      
-            float4 transformedPoint = math.mul(transformationMatrix, translatedPoint);
+            float4 transformedPoint = mul(transformationMatrix, translatedPoint);
      
             return transformedPoint;
         }
 
-
+        /// <summary>
+        /// math behind : Unity.Camera.ScreenToViewportPoint()
+        /// </summary>
+        /// <param name="point">point in screen (generaly Mouse Position)</param>
+        /// <param name="pixelWidth">camera.pixelWidth</param>
+        /// <param name="pixelHeight">camera.pixelHeight</param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float2 ScreenToViewportPoint(this float2 point, int pixelWidth, int pixelHeight)
+        {
+            return new float2(point.x / pixelWidth,point.y / pixelHeight);
+        }
     }
 }

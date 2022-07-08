@@ -104,6 +104,8 @@ namespace KaizerWald
             return worldDirection;
         }
         
+        
+        
         public static Ray ScreenPointToRay(this Camera camera, float2 screenPosition, float screenWidth, float screenHeight)
         {
             return new Ray(camera.transform.position, camera.ScreenToWorldDirection(screenPosition, screenWidth, screenHeight));
