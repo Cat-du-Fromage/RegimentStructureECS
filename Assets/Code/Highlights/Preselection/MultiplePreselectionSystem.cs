@@ -45,6 +45,7 @@ namespace KaizerWald
         
         protected override void OnUpdate()
         {
+            return;
             if (!GetComponent<IsClickDragPerformed>(CameraRaySingleton).Value) return;
 
             AABB selectionRectangle = GetComponent<SelectionBounds>(CameraRaySingleton).Value.ToAABB();

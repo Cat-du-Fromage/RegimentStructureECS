@@ -91,6 +91,7 @@ namespace KaizerWaldCode.RTTCamera
         {
             Vector3 start = camera.ScreenToViewportPoint(startPoint);
             Vector3 end = camera.ScreenToViewportPoint(endPoint);
+            
             Vector3 min = Vector3.Min(start, end);
             Vector3 max = Vector3.Max(start, end);
             min.z = camera.nearClipPlane;

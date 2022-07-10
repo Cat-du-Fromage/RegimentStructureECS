@@ -200,7 +200,9 @@ namespace KaizerWald
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float2 ScreenToViewportPoint(this float2 point, int pixelWidth, int pixelHeight)
         {
-            return new float2(point.x / pixelWidth,point.y / pixelHeight);
+            float x = point.x / pixelWidth; //given by camera.pixelWidth
+            float y = point.y / pixelHeight; //given by camera.pixelHeight
+            return new float2(x,y);
         }
     }
 }

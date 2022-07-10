@@ -53,6 +53,7 @@ namespace KaizerWald
 
         protected override void OnUpdate()
         {
+            if (GetSingleton<Data_ClickDrag>().Value) return;
             if (previousRegimentHit == regimentHit.Value) return;
             if (regimentHit.Value != Entity.Null)
             {

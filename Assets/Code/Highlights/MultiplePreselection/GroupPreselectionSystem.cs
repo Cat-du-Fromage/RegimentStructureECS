@@ -1,22 +1,25 @@
-using System;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
-using Unity.Physics;
 using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.InputSystem;
+
 using static Unity.Mathematics.math;
 using float2 = Unity.Mathematics.float2;
 
 namespace KaizerWald
 {
+    /// <summary>
+    /// MUST NOT RUN IF: RIGHT CLICK ENABLE
+    /// </summary>
     [UpdateInGroup(typeof(InitializationSystemGroup))]
     public partial class GroupPreselectionSystem : SystemBase, PlayerControls.IGroupPreselectionActions
     {
-        private EntityQuery query;
+        private EntityQuery unitQuery;
+        private EntityQuery regimentQuery;
         
         private Camera playerCamera;
         private Entity cameraInput;
@@ -31,6 +34,8 @@ namespace KaizerWald
 
         protected override void OnCreate()
         {
+            regimentQuery = GetEntityQuery(ComponentType.ReadOnly<Tag_Regiment>());
+            unitQuery = GetEntityQuery(ComponentType.ReadOnly<Tag_Unit>());
             RequireSingletonForUpdate<Tag_Camera>();
         }
 
@@ -47,14 +52,77 @@ namespace KaizerWald
             }
 
             pixelWidth = playerCamera.pixelWidth;
-            pixelWidth = playerCamera.pixelHeight;
+            pixelHeight = playerCamera.pixelHeight;
         }
         
         protected override void OnUpdate()
         {
-            AABB selectionBounds = GetViewportBounds(StartMousePosition, EndMousePosition, playerCamera.nearClipPlane, playerCamera.farClipPlane);
+            if (!GetSingleton<Data_ClickDrag>().Value) return;
             
-            return;
+            int numUnit = unitQuery.CalculateEntityCount();
+            NativeParallelHashSet<Entity> regimentsPreselected = new (numUnit, Allocator.TempJob);
+            AABB selectionBounds = GetScreenToViewportAABB(StartMousePosition, EndMousePosition, playerCamera.nearClipPlane, playerCamera.farClipPlane);
+            
+            JGetPreselection job = new JGetPreselection
+            {
+                BoundsAABB = selectionBounds,
+                WorldToCameraMatrix = playerCamera.worldToCameraMatrix,
+                ProjectionMatrix = playerCamera.projectionMatrix,
+                RegimentsPreselected = regimentsPreselected.AsParallelWriter()
+            };
+            JobHandle jobHandle = job.ScheduleParallel(unitQuery, Dependency);
+            jobHandle.Complete();
+            
+            //Debug.Log($"NumSelected : {regimentsPreselected.Count()}");
+            MakeRegimentPreselectionSort(regimentsPreselected);
+            /*
+            NativeList<Entity> testTemp = GetRegimentsList();
+            foreach (Entity regimentPreselected in regimentsPreselected)
+            {
+                testTemp.RemoveAtSwapBack(testTemp.IndexOf(regimentPreselected));
+                if (GetComponent<Flag_Preselection>(regimentPreselected).IsActive) continue;
+                SetComponent(regimentPreselected, new Flag_Preselection(){IsActive = true});
+                SetComponent(regimentPreselected, new Fitler_Preselection(){DidChange = true});
+            }
+
+            foreach (Entity regimentNotPreselected in testTemp)
+            {
+                if (!GetComponent<Flag_Preselection>(regimentNotPreselected).IsActive) continue;
+                SetComponent(regimentNotPreselected, new Flag_Preselection(){IsActive = false});
+                SetComponent(regimentNotPreselected, new Fitler_Preselection(){DidChange = true});
+            }
+*/
+            regimentsPreselected.Dispose();
+        }
+/*
+        private NativeList<Entity> GetRegimentsList()
+        {
+            NativeList<Entity> testTemp = new (regimentQuery.CalculateEntityCount(), Allocator.Temp);
+            testTemp.CopyFrom(regimentQuery.ToEntityArray(Allocator.Temp));
+            return testTemp;
+        }
+*/
+        private void MakeRegimentPreselectionSort(NativeParallelHashSet<Entity> regimentsPreselected)
+        {
+            Entities
+                .WithName("Preselection_Sort_Regiment")
+                .WithoutBurst()
+                .WithAll<Tag_Regiment>()
+                .ForEach((Entity regiment, ref Flag_Preselection flag) => 
+                {
+                    if (regimentsPreselected.Contains(regiment))
+                    {
+                        if (flag.IsActive) return;
+                        flag.IsActive = true;
+                        SetComponent(regiment, new Fitler_Preselection(){DidChange = true});
+                    }
+                    else
+                    {
+                        if (!flag.IsActive) return;
+                        flag.IsActive = false;
+                        SetComponent(regiment, new Fitler_Preselection(){DidChange = true});
+                    }
+                }).Run();
         }
         
         [BurstCompile(CompileSynchronously = true)]
@@ -64,37 +132,32 @@ namespace KaizerWald
             [ReadOnly] public AABB BoundsAABB;
             [ReadOnly] public float4x4 WorldToCameraMatrix;
             [ReadOnly] public float4x4 ProjectionMatrix;
-            private void Execute(in LocalToWorld ltw)
+
+            [WriteOnly] public NativeParallelHashSet<Entity>.ParallelWriter RegimentsPreselected;
+            private void Execute(in RegimentBelong regiment, in LocalToWorld ltw)
             {
                 float3 unitPositionInRect = ltw.Position.WorldToViewportPoint(WorldToCameraMatrix, ProjectionMatrix);
-                bool test = BoundsAABB.Contains(unitPositionInRect);
-                
-                
+
+                if (BoundsAABB.Contains(unitPositionInRect))
+                {
+                    RegimentsPreselected.Add(regiment.Regiment);
+                }
             }
         }
         
-        private AABB GetViewportBounds(in float2 startPoint, in float2 endPoint, float nearClipPlane, float farClipPlane)
+        private AABB GetScreenToViewportAABB(in float2 startPoint, in float2 endPoint, float nearClipPlane, float farClipPlane)
         {
-            float3 start = new (startPoint.ScreenToViewportPoint(pixelWidth, pixelHeight),0);
-            float3 end = new (endPoint.ScreenToViewportPoint(pixelWidth, pixelHeight),0);
-            float3 min = math.min(start, end);
-            float3 max = math.max(start, end);
+            float2 start = startPoint.ScreenToViewportPoint(pixelWidth, pixelHeight);
+            float2 end = endPoint.ScreenToViewportPoint(pixelWidth, pixelHeight);
             
-            min.z = nearClipPlane;
-            max.z = farClipPlane;
+            float3 minBound = new (min(start, end), nearClipPlane);
+            float3 maxBound = new (max(start, end), farClipPlane);
 
             Bounds bounds = new Bounds();
-            bounds.SetMinMax(min, max);
+            bounds.SetMinMax(minBound, maxBound);
             return bounds.ToAABB();
         }
-/*
-        private float2 ScreenToViewport(float2 point, int pixelWidth, int pixelHeight)
-        {
-            float x = point.x / pixelWidth; //given by camera.pixelWidth
-            float y = point.y / pixelHeight; //given by camera.pixelHeight
-            return new float2(x,y);
-        }
-*/
+        
         public void OnLeftMouseClickAndMove(InputAction.CallbackContext context)
         {
             switch (context.phase)
@@ -118,5 +181,6 @@ namespace KaizerWald
                     return;
             }
         }
+        
     }
 }
