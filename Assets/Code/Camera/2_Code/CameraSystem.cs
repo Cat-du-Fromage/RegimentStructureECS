@@ -1,9 +1,5 @@
-using System;
-using Unity.Jobs;
-using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.Jobs;
 
 using static Unity.Mathematics.math;
 using static KaizerWaldCode.RTTCamera.UGuiUtils;

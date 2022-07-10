@@ -10,20 +10,17 @@ using UnityEngine.InputSystem.Controls;
 namespace KaizerWald
 {
     [UpdateInGroup(typeof(InitializationSystemGroup))]
-    [UpdateAfter(typeof(CameraRaySystem))]
-    [UpdateAfter(typeof(PreselectionSystem))]
+    [UpdateBefore(typeof(GroupPreselectionSystem))]
     public partial class SelectionSystem : SystemBase
     {
-        private const int SelectionIndex = 2;
+        private EntityQuery regimentQuery;
         
         private ButtonControl leftMouseClick;
         private KeyControl leftShift;
-        
-        private BeginInitializationEntityCommandBufferSystem beginInitEcb;
-        
+
         protected override void OnCreate()
         {
-            beginInitEcb = World.GetOrCreateSystem<BeginInitializationEntityCommandBufferSystem>();
+            regimentQuery = GetEntityQuery(ComponentType.ReadOnly<Tag_Regiment>());
         }
 
         protected override void OnStartRunning()
@@ -35,47 +32,61 @@ namespace KaizerWald
         protected override void OnUpdate()
         {
             if (!leftMouseClick.wasReleasedThisFrame) return;
-            EntityCommandBuffer.ParallelWriter ecb = beginInitEcb.CreateCommandBuffer().AsParallelWriter();
-            if (!leftShift.isPressed)
+            /*
+            Entities
+            .WithName("Selection_Regiment_SetFilterChange")
+            .WithBurst()
+            .WithAll<Tag_Regiment>()
+            .ForEach((Entity regimentEntity, in Flag_Preselection preselectFlag) =>
             {
-                DisableSelection(ecb);
+                bool isPreselected = preselectFlag.IsActive;
+                bool isSelected = GetComponent<Flag_Selection>(regimentEntity).IsActive;
+                if ((!isPreselected && !isSelected) || (isPreselected && isSelected)) return;
+                SetComponent(regimentEntity, new Flag_Selection(){IsActive = isPreselected});
+            }).Run();
+            */
+            //ADD CONDITION FOR LEFT MAJ
+            if (leftShift.isPressed)
+            {
+                SelectionOnly();
             }
-            EnableSelection(ecb);
-            beginInitEcb.AddJobHandleForProducer(Dependency);
+            else
+            {
+                SelectAndDeselect();
+            }
         }
-        
-        //==============================================================================================================
-        // ENABLE
-        //==============================================================================================================
-        private void EnableSelection(EntityCommandBuffer.ParallelWriter ecb)
+
+        private void SelectionOnly()
         {
             Entities
-                .WithName("Selection_Enable_Regiment")
-                .WithBurst()
-                .WithAll<Tag_Unit, TIsPreselected>()
-                .WithNone<TIsSelected>()
-                .ForEach((Entity unitEntity, int entityInQueryIndex, in DynamicBuffer<LinkedEntityGroup> children) => 
-                {
-                    ecb.AddComponent<TIsSelected>(entityInQueryIndex, unitEntity);
-                    ecb.RemoveComponent<Disabled>(entityInQueryIndex, children[SelectionIndex].Value);
-                }).ScheduleParallel();
+            .WithName("SelectionOnly_Regiment_SetFilterChange")
+            .WithBurst()
+            .WithAll<Tag_Regiment>()
+            .ForEach((Entity regimentEntity, in Flag_Preselection preselectFlag) =>
+            {
+                bool isPreselected = preselectFlag.IsActive;
+                bool isSelected = GetComponent<Flag_Selection>(regimentEntity).IsActive;
+                if (!isPreselected || isSelected) return;
+                SetComponent(regimentEntity, new Flag_Selection(){IsActive = true});
+                SetComponent(regimentEntity, new Filter_Selection(){DidChange = true});
+            }).Run();
         }
-        
-        //==============================================================================================================
-        // DISABLE
-        //==============================================================================================================
-        private void DisableSelection(EntityCommandBuffer.ParallelWriter ecb)
+
+        private void SelectAndDeselect()
         {
             Entities
-                .WithName("Selection_Disable_Regiment")
-                .WithBurst()
-                .WithAll<Tag_Unit, TIsSelected>()
-                .WithNone<TIsPreselected>()
-                .ForEach((Entity unitEntity, int entityInQueryIndex, in DynamicBuffer<LinkedEntityGroup> children) => 
-                {
-                    ecb.RemoveComponent<TIsSelected>(entityInQueryIndex, unitEntity);
-                    ecb.AddComponent<Disabled>(entityInQueryIndex, children[SelectionIndex].Value);
-                }).ScheduleParallel();
+            .WithName("SelectAndDeselect_Regiment_SetFilterChange")
+            .WithBurst()
+            .WithAll<Tag_Regiment>()
+            .ForEach((Entity regimentEntity, in Flag_Preselection preselectFlag) =>
+            {
+                bool isPreselected = preselectFlag.IsActive;
+                bool isSelected = GetComponent<Flag_Selection>(regimentEntity).IsActive;
+                if ((!isPreselected && !isSelected) || (isPreselected && isSelected)) return;
+                SetComponent(regimentEntity, new Flag_Selection(){IsActive = isPreselected});
+                SetComponent(regimentEntity, new Filter_Selection(){DidChange = true});
+            }).Run();
         }
     }
+    
 }

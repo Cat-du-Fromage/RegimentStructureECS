@@ -5,6 +5,5 @@ using Unity.Mathematics;
 
 namespace KaizerWald
 {
-    [Serializable]
     public struct THighlight : IComponentData { }
 }

@@ -5,5 +5,8 @@ using Unity.Mathematics;
 
 namespace KaizerWald
 {
-    public struct TPreselection : IComponentData { }
+    public struct Filter_Selection : IComponentData
+    {
+        public bool DidChange;
+    }
 }

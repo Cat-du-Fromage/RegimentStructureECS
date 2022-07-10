@@ -5,5 +5,8 @@ using Unity.Mathematics;
 
 namespace KaizerWald
 {
-    public struct TSelection : IComponentData { }
+    public struct Flag_Selection : IComponentData
+    {
+        public bool IsActive;
+    }
 }

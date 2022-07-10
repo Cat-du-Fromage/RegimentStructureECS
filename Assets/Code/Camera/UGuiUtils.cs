@@ -101,24 +101,7 @@ namespace KaizerWaldCode.RTTCamera
             bounds.SetMinMax(min, max);
             return bounds;
         }
-        /*
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Bounds GetViewportBounds(in float4x4 worldToCameraMatrix, in float4x4 projectionMatrix, float3 startPoint, Vector3 endPoint)
-        {
-            
-            float3 start = startPoint.WorldToViewportPoint;
-            float3 end = camera.ScreenToViewportPoint(endPoint);
-            float3 min = Vector3.Min(start, end);
-            float3 max = Vector3.Max(start, end);
-            min.z = camera.nearClipPlane;
-            max.z = camera.farClipPlane;
 
-            Bounds bounds = new Bounds();
-            bounds.SetMinMax(min, max);
-            return bounds;
-            
-        }
-        */
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void SetViewportBounds(this ref Bounds bounds, Camera camera, Vector3 screenPosition1, Vector3 screenPosition2)
         {

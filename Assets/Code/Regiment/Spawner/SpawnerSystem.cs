@@ -26,7 +26,8 @@ namespace KaizerWald
         {
             Debug.Log("Update Spawner");
             
-            ComponentTypes preselectionData = new (typeof(Flag_Preselection), typeof(Fitler_Preselection));
+            ComponentTypes preselectionData = new (typeof(Flag_Preselection), typeof(Filter_Preselection));
+            ComponentTypes selectionData = new (typeof(Flag_Selection), typeof(Filter_Selection));
             
             Entities
                 .WithStructuralChanges()
@@ -36,11 +37,12 @@ namespace KaizerWald
                 {
                     em.AddComponent<Tag_Regiment>(regimentEntity);
                     em.AddComponents(regimentEntity, preselectionData);
+                    em.AddComponents(regimentEntity, selectionData);
                     
                     NativeArray<Entity> units = new (regimentData.NumUnits, Allocator.Temp);
                     em.Instantiate(regimentData.UnitPrefab, units);
             
-                    RegimentSharedData sharedRegiment = new RegimentSharedData() { Regiment = regimentEntity };
+                    Shared_RegimentEntity sharedSharedRegiment = new Shared_RegimentEntity() { Value = regimentEntity };
 
                     for (int i = 0; i < units.Length; i++)
                     {
@@ -51,7 +53,7 @@ namespace KaizerWald
                         em.AddComponents(units[i], preselectionData);
                         
                         em.AddComponentData(units[i], new RegimentBelong(){Regiment = regimentEntity});
-                        em.AddSharedComponentData(units[i], sharedRegiment);
+                        em.AddSharedComponentData(units[i], sharedSharedRegiment);
                     }
                     
                     float3 regimentPosition = entityInQueryIndex * (new float3(1) * 12);
@@ -61,7 +63,7 @@ namespace KaizerWald
                         Translation position = new Translation() { Value = GetPositionInRegiment(regimentPosition, i, unitSizeX) };
                         em.SetComponentData(units[i], position);
                     }
-                    SetUpHighlights(units, sharedRegiment);
+                    SetUpHighlights(units, sharedSharedRegiment);
                     
                     units.Dispose();
                 }).Run();
@@ -69,7 +71,7 @@ namespace KaizerWald
             em.RemoveComponent<TUninitialize>(query);
         }
 
-        private void SetUpHighlights(NativeArray<Entity> units, RegimentSharedData sharedRegiment)
+        private void SetUpHighlights(NativeArray<Entity> units, Shared_RegimentEntity sharedSharedRegiment)
         {
             for (int i = 0; i < units.Length; i++)
             {
@@ -78,11 +80,12 @@ namespace KaizerWald
                 Entity selectionHighlight = bufferUp[2].Value;
                 
                 //Preselection
-                em.AddComponent<TPreselection>(preselectionHighlight);
-                em.AddSharedComponentData(preselectionHighlight, sharedRegiment);
+                em.AddComponent<Tag_Preselection>(preselectionHighlight);
+                em.AddSharedComponentData(preselectionHighlight, sharedSharedRegiment);
 
                 //Selection
-                em.AddSharedComponentData(selectionHighlight, sharedRegiment);
+                em.AddComponent<Tag_Selection>(selectionHighlight);
+                em.AddSharedComponentData(selectionHighlight, sharedSharedRegiment);
             }
         }
         

@@ -24,6 +24,8 @@ namespace KaizerWald
         private readonly float screenHeight = Screen.height;
         
         private Camera playerCamera;
+        
+        private Mouse mouse;
         private PlayerControls controls;
 
         private BuildPhysicsWorld buildPhysicsWorld;
@@ -49,25 +51,30 @@ namespace KaizerWald
                 controls.SinglePreselection.SetCallbacks(this);
             }
             RequireSingletonForUpdate<Tag_Camera>();
+            
+            mouse = Mouse.current;
         }
 
         protected override void OnUpdate()
         {
+            if (mouse.leftButton.wasReleasedThisFrame)
+            {
+                OnLeftMouseReleased();
+            }
+            
             if (GetSingleton<Data_ClickDrag>().Value) return;
+
             if (previousRegimentHit == regimentHit.Value) return;
-            if (regimentHit.Value != Entity.Null)
-            {
-                SetComponent(regimentHit.Value, new Flag_Preselection(){IsActive = true});
-                SetComponent(regimentHit.Value, new Fitler_Preselection(){DidChange = true});
-                //EntityManager.SetComponentData(regimentHit.Value, new Flag_Preselection(){IsActive = true});
-            }
-            if (previousRegimentHit != Entity.Null)
-            {
-                SetComponent(previousRegimentHit, new Flag_Preselection(){IsActive = false});
-                SetComponent(previousRegimentHit, new Fitler_Preselection(){DidChange = true});
-                //EntityManager.SetComponentData(previousRegimentHit, new Flag_Preselection(){IsActive = false});
-            }
+            SetPreselectionFlag(regimentHit.Value, true);
+            SetPreselectionFlag(previousRegimentHit, false);
             previousRegimentHit = regimentHit.Value;
+        }
+
+        private void SetPreselectionFlag(in Entity regiment, bool isActive)
+        {
+            if (regiment == Entity.Null) return;
+            SetComponent(regiment, new Flag_Preselection(){IsActive = isActive});
+            SetComponent(regiment, new Filter_Preselection(){DidChange = true});
         }
 
         protected override void OnDestroy()
@@ -79,6 +86,12 @@ namespace KaizerWald
         protected override void OnStopRunning()
         {
             if (regimentHit.IsCreated) regimentHit.Dispose();
+        }
+
+        private void OnLeftMouseReleased()
+        {
+            previousRegimentHit = Entity.Null;
+            regimentHit.Value = ScheduleSinglePreselection(mouse.position.ReadValue());
         }
 
         public void OnMouseMove(InputAction.CallbackContext context)
@@ -94,13 +107,14 @@ namespace KaizerWald
             CollisionWorld world = buildPhysicsWorld.PhysicsWorld.CollisionWorld;
             float3 origin = playerCamera.transform.position;
             float3 direction = playerCamera.ScreenToWorldDirection(mousePosition, screenWidth, screenHeight);
+
             CollisionFilter unitFilter = GetSingleton<Data_UnitCollisionFilter>().Value;
             
             JobHandle jobHandle = world.SingleSphereCast(origin, Radius, direction, regimentHit, DistanceCast, unitFilter, Dependency);
             jobHandle.Complete();
             
             if (regimentHit.Value == Entity.Null) return Entity.Null;
-            Entity regiment = EntityManager.GetSharedComponentData<RegimentSharedData>(regimentHit.Value).Regiment;
+            Entity regiment = EntityManager.GetSharedComponentData<Shared_RegimentEntity>(regimentHit.Value).Value;
             return previousRegimentHit == regiment ? previousRegimentHit : regiment;
         }
         

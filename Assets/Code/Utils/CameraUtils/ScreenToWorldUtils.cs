@@ -92,7 +92,7 @@ namespace KaizerWald
         {
             float2 tempScreenPosition = new (screenPosition.x, screenHeight - screenPosition.y);
             
-            float4 clipSpace = new (((tempScreenPosition.x * 2.0f) / screenWidth) - 1.0f, (1.0f - (2.0f * tempScreenPosition.y) / screenHeight), 0.0f, 1.0f);
+            float4 clipSpace = new (((tempScreenPosition.x * 2f) / screenWidth) - 1f, (1f - (2f * tempScreenPosition.y) / screenHeight), 0, 1f);
      
             float4 viewSpace = mul(inverse(camera.projectionMatrix), clipSpace);
             viewSpace /= viewSpace.w;
@@ -104,7 +104,21 @@ namespace KaizerWald
             return worldDirection;
         }
         
-        
+        public static float3 ScreenToWorldDirection(this float2 screenPosition,in float3 cameraPosition,in float4x4 projectionMatrix,in float4x4 cameraToWorldMatrix,float screenWidth, float screenHeight)
+        {
+            float2 tempScreenPosition = new (screenPosition.x, screenHeight - screenPosition.y);
+            
+            float4 clipSpace = new (((tempScreenPosition.x * 2f) / screenWidth) - 1f, (1f - (2f * tempScreenPosition.y) / screenHeight), 0, 1f);
+     
+            float4 viewSpace = mul(inverse(projectionMatrix), clipSpace);
+            viewSpace /= viewSpace.w;
+     
+            float4 worldSpace = mul(cameraToWorldMatrix, viewSpace);
+     
+            float3 worldDirection = normalize(worldSpace.xyz - cameraPosition);
+     
+            return worldDirection;
+        }
         
         public static Ray ScreenPointToRay(this Camera camera, float2 screenPosition, float screenWidth, float screenHeight)
         {

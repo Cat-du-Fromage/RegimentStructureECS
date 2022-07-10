@@ -23,7 +23,7 @@ namespace KaizerWald
         {
             EntityQueryDesc description = new EntityQueryDesc
             {
-                All = new ComponentType[] { typeof(TPreselection), typeof(RegimentSharedData) },
+                All = new ComponentType[] { typeof(Tag_Preselection), typeof(Shared_RegimentEntity) },
                 Options = EntityQueryOptions.IncludeDisabled
             };
             preselectionHighlightQuery = GetEntityQuery(description);
@@ -38,18 +38,19 @@ namespace KaizerWald
         {
             NativeParallelHashMap<Entity, bool> regimentUpdated = new (2, Allocator.TempJob);
             
-            new JGetRegimentPreselected() { RegimentUpdated = regimentUpdated }.Run();
+            JGetRegimentPreselected job = new (){ RegimentUpdated = regimentUpdated };
+            job.Run();
             
             foreach (KeyValue<Entity, bool> update in regimentUpdated)
             {
-                preselectionHighlightQuery.SetSharedComponentFilter(new RegimentSharedData(){Regiment = update.Key});
+                preselectionHighlightQuery.SetSharedComponentFilter(new Shared_RegimentEntity(){Value = update.Key});
                 EntityManager.SelectAddOrRemove<DisableRendering>(preselectionHighlightQuery, !update.Value);
                 preselectionHighlightQuery.ResetFilter();
             }
             regimentUpdated.Dispose();
         }
         
-        
+        //ATTENTION "WithChangeFilter": Change TOUT LE CHUNK pas uniquement les entités avec les comp changés!
         [BurstCompile(CompileSynchronously = true)]
         [WithAll(typeof(Tag_Regiment))]
         [WithChangeFilter(typeof(Flag_Preselection))]
@@ -57,7 +58,7 @@ namespace KaizerWald
         {
             [WriteOnly] public NativeParallelHashMap<Entity, bool> RegimentUpdated;
 
-            private void Execute(Entity regimentEntity, ref Fitler_Preselection filter, in Flag_Preselection flag)
+            private void Execute(Entity regimentEntity, ref Filter_Preselection filter, in Flag_Preselection flag)
             {
                 if (!filter.DidChange) return;
                 RegimentUpdated.Add(regimentEntity, flag.IsActive);

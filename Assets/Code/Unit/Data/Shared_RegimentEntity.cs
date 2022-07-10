@@ -2,14 +2,12 @@ using System;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-using UnityEngine;
 
 namespace KaizerWald
 {
     [Serializable]
-    public struct SingletonCameraRayHit : IComponentData
+    public struct Shared_RegimentEntity : ISharedComponentData
     {
-        public Entity UnitHit;
-        public Entity RegimentHit;
+        public Entity Value;
     }
 }
