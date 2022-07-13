@@ -18,23 +18,23 @@ namespace KaizerWald
         protected override void OnUpdate()
         {
             float t = (float)Time.ElapsedTime;
+            //uint stateIndex = (uint)(entityInQueryIndex + select(t, t / uint.MaxValue, t >= uint.MaxValue));
             OptimizedMesh(t);
         }
 
         private void OptimizedMesh(float t)
         {
             Entities
+            .WithName("SingleClipPlayerSystem_OptimizedMesh")
             .WithBurst()
-            .ForEach((int entityInQueryIndex,ref DynamicBuffer<OptimizedBoneToRoot> btrBuffer, 
+            .ForEach((int entityInQueryIndex,
+            ref DynamicBuffer<OptimizedBoneToRoot> btrBuffer, 
             in OptimizedSkeletonHierarchyBlobReference hierarchyRef, 
             in SingleClip singleClip) =>
             {
-                //uint stateIndex = (uint)(entityInQueryIndex + select(t, t / uint.MaxValue, t >= uint.MaxValue));
                 float rand = Random.CreateFromIndex((uint)entityInQueryIndex).NextFloat();
-                
                 ref SkeletonClip clip = ref singleClip.blob.Value.clips[0];
                 float clipTime = clip.LoopToClipTime(t * rand);
-                
                 clip.SamplePose(btrBuffer, hierarchyRef.blob, clipTime);
             }).ScheduleParallel();
         }

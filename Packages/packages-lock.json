@@ -24,7 +24,7 @@
         "com.unity.audio.dspgraph": "0.1.0-preview.22",
         "com.unity.rendering.hybrid": "0.50.0-preview.44"
       },
-      "hash": "150d34a0d6884fc391b646f17251afb69363e852"
+      "hash": "0f7ebfdc62ec466c70a50204f4806a88767efd8f"
     },
     "com.unity.addressables": {
       "version": "1.19.19",
