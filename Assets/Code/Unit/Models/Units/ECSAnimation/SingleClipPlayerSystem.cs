@@ -1,42 +1,40 @@
 using Latios;
 using Latios.Kinemation;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
 
+using static Unity.Mathematics.math;
+using Random = Unity.Mathematics.Random;
+
 namespace KaizerWald
 {
     [UpdateBefore(typeof(TransformSystemGroup))]
-    public partial class SingleClipPlayerSystem : SubSystem
+    public partial class SingleClipPlayerSystem : SystemBase
     {
         protected override void OnUpdate()
         {
             float t = (float)Time.ElapsedTime;
-            Entities
-                .WithBurst()
-                .ForEach((ref DynamicBuffer<OptimizedBoneToRoot> btrBuffer, 
-                    in OptimizedSkeletonHierarchyBlobReference hierarchyRef, 
-                    in SingleClip singleClip) =>
-                {
-                    ref SkeletonClip clip = ref singleClip.blob.Value.clips[0];
-                    float clipTime = clip.LoopToClipTime(t);
-                    clip.SamplePose(btrBuffer, hierarchyRef.blob, clipTime);
-                }).ScheduleParallel();
-            //OptimizedMesh(t);
+            OptimizedMesh(t);
         }
 
         private void OptimizedMesh(float t)
         {
             Entities
             .WithBurst()
-            .ForEach((ref DynamicBuffer<OptimizedBoneToRoot> btrBuffer, 
+            .ForEach((int entityInQueryIndex,ref DynamicBuffer<OptimizedBoneToRoot> btrBuffer, 
             in OptimizedSkeletonHierarchyBlobReference hierarchyRef, 
             in SingleClip singleClip) =>
             {
+                //uint stateIndex = (uint)(entityInQueryIndex + select(t, t / uint.MaxValue, t >= uint.MaxValue));
+                float rand = Random.CreateFromIndex((uint)entityInQueryIndex).NextFloat();
+                
                 ref SkeletonClip clip = ref singleClip.blob.Value.clips[0];
-                float clipTime = clip.LoopToClipTime(t);
+                float clipTime = clip.LoopToClipTime(t * rand);
+                
                 clip.SamplePose(btrBuffer, hierarchyRef.blob, clipTime);
             }).ScheduleParallel();
         }

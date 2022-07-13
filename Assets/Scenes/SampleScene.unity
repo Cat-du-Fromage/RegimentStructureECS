@@ -154,7 +154,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Orders:
-  - number: 1
+  - number: 3
     regimentPrefab: {fileID: 8702607822139080616, guid: 6b2ef7e97c8bbc840ba98aaa32b2fe38,
       type: 3}
 --- !u!4 &243250964

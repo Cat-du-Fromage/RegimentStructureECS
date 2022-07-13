@@ -4,40 +4,43 @@ using Latios;
 using Latios.Authoring;
 using Unity.Entities;
 
-[UnityEngine.Scripting.Preserve]
-public class LatiosConversionBootstrap : ICustomConversionBootstrap
+namespace KaizerWald
 {
-    public bool InitializeConversion(World conversionWorldWithGroupsAndMappingSystems, CustomConversionSettings settings, ref List<Type> filteredSystems)
+    [UnityEngine.Scripting.Preserve]
+    public class LatiosConversionBootstrap : ICustomConversionBootstrap
     {
-        GameObjectConversionGroup defaultGroup = conversionWorldWithGroupsAndMappingSystems.GetExistingSystem<GameObjectConversionGroup>();
-        BootstrapTools.InjectSystems(filteredSystems, conversionWorldWithGroupsAndMappingSystems, defaultGroup);
+        public bool InitializeConversion(World conversionWorldWithGroupsAndMappingSystems, CustomConversionSettings settings, ref List<Type> filteredSystems)
+        {
+            GameObjectConversionGroup defaultGroup = conversionWorldWithGroupsAndMappingSystems.GetExistingSystem<GameObjectConversionGroup>();
+            BootstrapTools.InjectSystems(filteredSystems, conversionWorldWithGroupsAndMappingSystems, defaultGroup);
 
-        //Latios.Psyshock.Authoring.PsyshockConversionBootstrap.InstallLegacyColliderConversion(conversionWorldWithGroupsAndMappingSystems);
-        Latios.Kinemation.Authoring.KinemationConversionBootstrap.InstallKinemationConversion(conversionWorldWithGroupsAndMappingSystems);
-        return true;
+            //Latios.Psyshock.Authoring.PsyshockConversionBootstrap.InstallLegacyColliderConversion(conversionWorldWithGroupsAndMappingSystems);
+            Latios.Kinemation.Authoring.KinemationConversionBootstrap.InstallKinemationConversion(conversionWorldWithGroupsAndMappingSystems);
+            return true;
+        }
     }
-}
 
-[UnityEngine.Scripting.Preserve]
-public class LatiosBootstrap : ICustomBootstrap
-{
-    public unsafe bool Initialize(string defaultWorldName)
+    [UnityEngine.Scripting.Preserve]
+    public class LatiosBootstrap : ICustomBootstrap
     {
-        LatiosWorld world                             = new LatiosWorld(defaultWorldName);
-        World.DefaultGameObjectInjectionWorld = world;
+        public unsafe bool Initialize(string defaultWorldName)
+        {
+            LatiosWorld world = new LatiosWorld(defaultWorldName);
+            World.DefaultGameObjectInjectionWorld = world;
 
-        List<Type> systems = new List<Type>(DefaultWorldInitialization.GetAllSystems(WorldSystemFilterFlags.Default));
-        BootstrapTools.InjectSystems(systems, world, world.simulationSystemGroup);
+            List<Type> systems = new List<Type>(DefaultWorldInitialization.GetAllSystems(WorldSystemFilterFlags.Default));
+            BootstrapTools.InjectSystems(systems, world, world.simulationSystemGroup);
 
-        CoreBootstrap.InstallImprovedTransforms(world);
-        //Latios.Myri.MyriBootstrap.InstallMyri(world);
-        Latios.Kinemation.KinemationBootstrap.InstallKinemation(world);
+            CoreBootstrap.InstallImprovedTransforms(world);
+            //Latios.Myri.MyriBootstrap.InstallMyri(world);
+            Latios.Kinemation.KinemationBootstrap.InstallKinemation(world);
 
-        world.initializationSystemGroup.SortSystems();
-        world.simulationSystemGroup.SortSystems();
-        world.presentationSystemGroup.SortSystems();
+            world.initializationSystemGroup.SortSystems();
+            world.simulationSystemGroup.SortSystems();
+            world.presentationSystemGroup.SortSystems();
 
-        ScriptBehaviourUpdateOrder.AppendWorldToCurrentPlayerLoop(world);
-        return true;
+            ScriptBehaviourUpdateOrder.AppendWorldToCurrentPlayerLoop(world);
+            return true;
+        }
     }
 }
