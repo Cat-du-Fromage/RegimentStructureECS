@@ -67,7 +67,7 @@ namespace KaizerWald
             //Offset to place regiment in the center of the mass
             float offsetX = regimentPosition.x - GetXOffset();
 
-            return new float3(x * unitSizeX + offsetX, 1f, -(z * unitSizeX));
+            return new float3(x * unitSizeX + offsetX, 0f, -(z * unitSizeX));
             
             float GetXOffset()
             {

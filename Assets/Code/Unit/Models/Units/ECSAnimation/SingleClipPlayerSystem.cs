@@ -14,7 +14,31 @@ namespace KaizerWald
         protected override void OnUpdate()
         {
             float t = (float)Time.ElapsedTime;
-            UsingParallel2(t);
+            Entities
+                .WithBurst()
+                .ForEach((ref DynamicBuffer<OptimizedBoneToRoot> btrBuffer, 
+                    in OptimizedSkeletonHierarchyBlobReference hierarchyRef, 
+                    in SingleClip singleClip) =>
+                {
+                    ref SkeletonClip clip = ref singleClip.blob.Value.clips[0];
+                    float clipTime = clip.LoopToClipTime(t);
+                    clip.SamplePose(btrBuffer, hierarchyRef.blob, clipTime);
+                }).ScheduleParallel();
+            //OptimizedMesh(t);
+        }
+
+        private void OptimizedMesh(float t)
+        {
+            Entities
+            .WithBurst()
+            .ForEach((ref DynamicBuffer<OptimizedBoneToRoot> btrBuffer, 
+            in OptimizedSkeletonHierarchyBlobReference hierarchyRef, 
+            in SingleClip singleClip) =>
+            {
+                ref SkeletonClip clip = ref singleClip.blob.Value.clips[0];
+                float clipTime = clip.LoopToClipTime(t);
+                clip.SamplePose(btrBuffer, hierarchyRef.blob, clipTime);
+            }).ScheduleParallel();
         }
         
         private void UsingParallel2(float t)

@@ -49,7 +49,7 @@ namespace KaizerWald
             float xOffset = 0;
             for (int regimentIndex = 0; regimentIndex < regiments.Length; regimentIndex++)
             {
-                float3 position = new float3(xOffset, 1, 0);
+                float3 position = new float3(xOffset, 0, 0);
                 Data_RegimentClass regClass = GetComponent<Data_RegimentClass>(regiments[regimentIndex]);
                 SetComponent(regiments[regimentIndex], new Translation(){Value = position});
                 xOffset += (regClass.MinRow + 4) * regClass.SpaceBetweenUnitsX;

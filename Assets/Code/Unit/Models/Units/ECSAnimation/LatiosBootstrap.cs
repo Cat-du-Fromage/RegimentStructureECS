@@ -12,7 +12,7 @@ public class LatiosConversionBootstrap : ICustomConversionBootstrap
         GameObjectConversionGroup defaultGroup = conversionWorldWithGroupsAndMappingSystems.GetExistingSystem<GameObjectConversionGroup>();
         BootstrapTools.InjectSystems(filteredSystems, conversionWorldWithGroupsAndMappingSystems, defaultGroup);
 
-        Latios.Psyshock.Authoring.PsyshockConversionBootstrap.InstallLegacyColliderConversion(conversionWorldWithGroupsAndMappingSystems);
+        //Latios.Psyshock.Authoring.PsyshockConversionBootstrap.InstallLegacyColliderConversion(conversionWorldWithGroupsAndMappingSystems);
         Latios.Kinemation.Authoring.KinemationConversionBootstrap.InstallKinemationConversion(conversionWorldWithGroupsAndMappingSystems);
         return true;
     }
@@ -30,7 +30,7 @@ public class LatiosBootstrap : ICustomBootstrap
         BootstrapTools.InjectSystems(systems, world, world.simulationSystemGroup);
 
         CoreBootstrap.InstallImprovedTransforms(world);
-        Latios.Myri.MyriBootstrap.InstallMyri(world);
+        //Latios.Myri.MyriBootstrap.InstallMyri(world);
         Latios.Kinemation.KinemationBootstrap.InstallKinemation(world);
 
         world.initializationSystemGroup.SortSystems();
