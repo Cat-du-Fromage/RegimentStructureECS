@@ -742,6 +742,7 @@ PlayerSettings:
   ps4videoRecordingFeaturesUsed: 0
   ps4contentSearchFeaturesUsed: 0
   ps4CompatibilityPS5: 0
+  ps4AllowPS5Detection: 0
   ps4GPU800MHz: 1
   ps4attribEyeToEyeDistanceSettingVR: 0
   ps4IncludedModules: []
@@ -767,7 +768,7 @@ PlayerSettings:
   webGLThreadsSupport: 0
   webGLDecompressionFallback: 0
   scriptingDefineSymbols:
-    Standalone: HYBRID_ENTITIES_CAMERA_CONVERSION
+    Standalone: HYBRID_ENTITIES_CAMERA_CONVERSION;ENABLE_COMPUTE_DEFORMATIONS
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:

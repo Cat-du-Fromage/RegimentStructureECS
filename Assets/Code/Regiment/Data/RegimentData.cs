@@ -11,5 +11,6 @@ namespace KaizerWald
         public int Index;
         public int NumUnits;
         public Entity UnitPrefab;
+        public Entity PlacementPrefab;
     }
 }

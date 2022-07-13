@@ -18,7 +18,7 @@ namespace KaizerWald
     public partial class PreselectionEnableHighlightSystem : SystemBase
     {
         private EntityQuery preselectionHighlightQuery;
-
+        
         protected override void OnCreate()
         {
             EntityQueryDesc description = new EntityQueryDesc
@@ -26,7 +26,7 @@ namespace KaizerWald
                 All = new ComponentType[] { typeof(Tag_Preselection), typeof(Shared_RegimentEntity) },
                 Options = EntityQueryOptions.IncludeDisabled
             };
-            preselectionHighlightQuery = GetEntityQuery(description);
+            preselectionHighlightQuery = EntityManager.CreateEntityQuery(description);
         }
 
         protected override void OnUpdate()
@@ -36,7 +36,7 @@ namespace KaizerWald
 
         private void UpdateHighlights()
         {
-            NativeParallelHashMap<Entity, bool> regimentUpdated = new (2, Allocator.TempJob);
+            using NativeParallelHashMap<Entity, bool> regimentUpdated = new (2, Allocator.TempJob);
             
             JGetRegimentPreselected job = new (){ RegimentUpdated = regimentUpdated };
             job.Run();
@@ -47,7 +47,6 @@ namespace KaizerWald
                 EntityManager.SelectAddOrRemove<DisableRendering>(preselectionHighlightQuery, !update.Value);
                 preselectionHighlightQuery.ResetFilter();
             }
-            regimentUpdated.Dispose();
         }
         
         //ATTENTION "WithChangeFilter": Change TOUT LE CHUNK pas uniquement les entités avec les comp changés!

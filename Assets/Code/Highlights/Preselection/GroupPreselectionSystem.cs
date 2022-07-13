@@ -67,7 +67,7 @@ namespace KaizerWald
             int numUnit = unitQuery.CalculateEntityCount();
             NativeParallelHashSet<Entity> regimentsPreselected = new (numUnit, Allocator.TempJob);
             AABB selectionBounds = GetScreenToViewportAABB(StartMousePosition, EndMousePosition, playerCamera.nearClipPlane, playerCamera.farClipPlane);
-            
+
             JGetPreselection job = new JGetPreselection
             {
                 BoundsAABB = selectionBounds,
@@ -164,12 +164,11 @@ namespace KaizerWald
             [ReadOnly] public float4x4 ProjectionMatrix;
 
             [WriteOnly, NativeDisableParallelForRestriction] public NativeParallelHashSet<Entity>.ParallelWriter RegimentsPreselected;
-            private void Execute(in RegimentBelong regiment, in LocalToWorld ltw)
+            private void Execute(in Data_Regiment dataRegiment, in Translation position)
             {
-                float3 unitPositionInRect = ltw.Position.WorldToViewportPoint(WorldToCameraMatrix, ProjectionMatrix);
-
+                float3 unitPositionInRect = position.Value.WorldToViewportPoint(WorldToCameraMatrix, ProjectionMatrix);
                 if (!BoundsAABB.Contains(unitPositionInRect)) return;
-                RegimentsPreselected.Add(regiment.Regiment);
+                RegimentsPreselected.Add(dataRegiment.Value);
             }
         }
     }

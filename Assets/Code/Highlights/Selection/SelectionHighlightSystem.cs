@@ -21,6 +21,7 @@ namespace KaizerWald
         
         protected override void OnCreate()
         {
+            //Selection Query
             EntityQueryDesc description = new EntityQueryDesc
             {
                 All = new ComponentType[] { typeof(Tag_Selection), typeof(Shared_RegimentEntity) },
@@ -28,6 +29,7 @@ namespace KaizerWald
             };
             selectionHighlightQuery = GetEntityQuery(description);
             
+            //Regiment Query
             regimentUpdatedQuery = GetEntityQuery(ComponentType.ReadOnly<Tag_Regiment>(), typeof(Flag_Selection));
             regimentUpdatedQuery.SetChangedVersionFilter(typeof(Flag_Selection));
         }
@@ -41,9 +43,8 @@ namespace KaizerWald
         {
             if (!leftMouseClick.wasReleasedThisFrame) return;
             NativeParallelHashMap<Entity, bool> regimentUpdated = new (2, Allocator.TempJob);
-            JGetRegimentSelected job = new (){ RegimentUpdated = regimentUpdated };
-            job.Run(regimentUpdatedQuery);
-            
+            new JGetRegimentSelected{ RegimentUpdated = regimentUpdated }.Run(regimentUpdatedQuery);
+
             foreach (KeyValue<Entity, bool> update in regimentUpdated)
             {
                 selectionHighlightQuery.SetSharedComponentFilter(new Shared_RegimentEntity(){Value = update.Key});
@@ -56,10 +57,9 @@ namespace KaizerWald
         [BurstCompile(CompileSynchronously = true)]
         [WithAll(typeof(Tag_Regiment))]
         [WithChangeFilter(typeof(Flag_Selection))]
-        private partial struct JGetRegimentSelected : IJobEntity
+        public partial struct JGetRegimentSelected : IJobEntity
         {
             [WriteOnly] public NativeParallelHashMap<Entity, bool> RegimentUpdated;
-
             private void Execute(Entity regimentEntity, ref Filter_Selection filter, in Flag_Selection flag)
             {
                 if (!filter.DidChange) return;

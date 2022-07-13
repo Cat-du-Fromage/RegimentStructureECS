@@ -10,7 +10,7 @@ namespace KaizerWald
     {
         [SerializeField] private Camera playerCamera;
         [SerializeField] private int UnitLayerMask;
-        
+        [SerializeField] private int RaycastLayerMask;
         public void Convert(Entity entity, EntityManager dstManager, GameObjectConversionSystem conversionSystem)
         {
             EntityArchetype cameraInputArchetype = dstManager.CreateArchetype
@@ -31,6 +31,6 @@ namespace KaizerWald
             dstManager.SetComponentData(entity, new Data_UnitCollisionFilter() { Value = collisionFilter });
         }
         
-        private CollisionFilter collisionFilter => new CollisionFilter { BelongsTo = ~0u, CollidesWith = 1u << UnitLayerMask, GroupIndex = 0 };
+        private CollisionFilter collisionFilter => new CollisionFilter { BelongsTo = 1u << RaycastLayerMask, CollidesWith = 1u << UnitLayerMask, GroupIndex = 0 };
     }
 }
