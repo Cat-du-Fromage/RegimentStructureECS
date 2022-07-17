@@ -16,33 +16,22 @@ namespace KaizerWald
         /// <summary>
         /// ECS RAYCAST BASIC Construction
         /// </summary>
+        /// <param name="collisionWorld"></param>
         /// <param name="fromPosition"></param>
         /// <param name="toPosition"></param>
         /// <param name="collisionFilter"></param>
         /// <returns></returns>
-        public static unsafe Entity Raycast(in float3 fromPosition, in float3 toPosition, uint collisionFilter)
+        public static unsafe RaycastHit Raycast(this CollisionWorld collisionWorld, in float3 fromPosition, in float3 toPosition, float distance,CollisionFilter collisionFilter)
         {
-            BuildPhysicsWorld physicsWorld = World.DefaultGameObjectInjectionWorld.GetExistingSystem<BuildPhysicsWorld>();
-            CollisionWorld collisionWorld = physicsWorld.PhysicsWorld.CollisionWorld;
-
             RaycastInput input = new RaycastInput
             {
                 Start = fromPosition,
-                End = toPosition,
-                //Layer filter
-                Filter = new CollisionFilter
-                {
-                    BelongsTo = ~0u, //belongs to all layers
-                    CollidesWith = collisionFilter, //collides with all layers
-                    GroupIndex = 0,
-                }
+                End = fromPosition + toPosition * distance,
+                Filter = collisionFilter
             };
-            
-            Entity entityHit = !collisionWorld.CastRay(input, out RaycastHit hit)
-                ? Entity.Null
-                : physicsWorld.PhysicsWorld.Bodies[hit.RigidBodyIndex].Entity;
-            
-            return entityHit;
+
+            collisionWorld.CastRay(input, out RaycastHit hit);
+            return hit;
         }
         
         public static unsafe bool Raycast(UnityEngine.Ray ray, out RaycastHit entityHit, float distance, int collisionFilter)
@@ -135,7 +124,7 @@ namespace KaizerWald
         }
     }
     
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true)]
     public struct RaycastJob : IJobFor
     {
         [ReadOnly] public CollisionWorld world;
@@ -144,9 +133,22 @@ namespace KaizerWald
 
         public unsafe void Execute(int index)
         {
-            RaycastHit hit;
-            world.CastRay(inputs[index], out hit);
+            world.CastRay(inputs[index], out RaycastHit hit);
             results[index] = hit;
+        }
+    }
+    
+    [BurstCompile(CompileSynchronously = true)]
+    public struct JSingleRaycast : IJob
+    {
+        [ReadOnly] public CollisionWorld World;
+        [ReadOnly] public NativeReference<RaycastInput> Input;
+        [WriteOnly] public NativeReference<RaycastHit> Result;
+
+        public unsafe void Execute()
+        {
+            World.CastRay(Input.Value, out RaycastHit hit);
+            Result.Value = hit;
         }
     }
 }

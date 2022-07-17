@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Unity.Mathematics;
 using UnityEngine;
 using static Unity.Mathematics.math;
@@ -45,6 +46,7 @@ namespace KaizerWald
         /// <param name="cameraProjectionInverse">math.inverse (camera.projectionMatrix);</param>
         /// <param name="cameraOrigin">camera.transform.position;</param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float3 ScreenToWorldRay (
             float2 screenPosition,
             float screenWidth,
@@ -66,7 +68,7 @@ namespace KaizerWald
      
             return worldDirection;
         }
-                
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float3 ScreenToWorldRay(this float3 cameraPosition, ScreenData screenData, CameraScreenToWorldData cameraData)
         {
             float2 screenPosition = new (screenData.ScreenPosition.x, screenData.ScreenHeight - screenData.ScreenPosition.y);
@@ -82,13 +84,13 @@ namespace KaizerWald
      
             return worldDirection;
         }
-        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Ray ScreenPointToRay(this float3 cameraPosition, ScreenData screenData, CameraScreenToWorldData cameraData)
         {
             return new Ray(cameraPosition, cameraPosition.ScreenToWorldRay(screenData, cameraData));
         }
-        
-        public static float3 ScreenToWorldDirection(this Camera camera, float2 screenPosition, float screenWidth, float screenHeight)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 ScreenToWorldDirection(this Camera camera, in float2 screenPosition, float screenWidth, float screenHeight)
         {
             float2 tempScreenPosition = new (screenPosition.x, screenHeight - screenPosition.y);
             
@@ -103,7 +105,7 @@ namespace KaizerWald
      
             return worldDirection;
         }
-        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float3 ScreenToWorldDirection(this float2 screenPosition,in float3 cameraPosition,in float4x4 projectionMatrix,in float4x4 cameraToWorldMatrix,float screenWidth, float screenHeight)
         {
             float2 tempScreenPosition = new (screenPosition.x, screenHeight - screenPosition.y);
@@ -119,7 +121,7 @@ namespace KaizerWald
      
             return worldDirection;
         }
-        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Ray ScreenPointToRay(this Camera camera, float2 screenPosition, float screenWidth, float screenHeight)
         {
             return new Ray(camera.transform.position, camera.ScreenToWorldDirection(screenPosition, screenWidth, screenHeight));

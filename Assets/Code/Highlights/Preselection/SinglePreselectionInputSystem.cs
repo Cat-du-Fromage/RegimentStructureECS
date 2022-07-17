@@ -35,7 +35,7 @@ namespace KaizerWald
 
         protected override void OnCreate()
         {
-            buildPhysicsWorld = World.DefaultGameObjectInjectionWorld.GetExistingSystem<BuildPhysicsWorld>();
+            buildPhysicsWorld = World.GetOrCreateSystem<BuildPhysicsWorld>();
             regimentHit = new NativeReference<Entity>(Allocator.Persistent);
         }
 

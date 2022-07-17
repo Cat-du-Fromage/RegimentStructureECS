@@ -57,7 +57,7 @@ namespace KaizerWald
         {
             [WriteOnly] public NativeParallelHashMap<Entity, bool> RegimentUpdated;
 
-            private void Execute(Entity regimentEntity, ref Filter_Preselection filter, in Flag_Preselection flag)
+            public void Execute(Entity regimentEntity, ref Filter_Preselection filter, in Flag_Preselection flag)
             {
                 if (!filter.DidChange) return;
                 RegimentUpdated.Add(regimentEntity, flag.IsActive);

@@ -4,9 +4,15 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
+using UnityEngine;
 
 namespace KaizerWald
 {
+    public struct Data_RegimentAnimationPlayed : IComponentData
+    {
+        public FusilierClips Value;
+    }
+    
     [UpdateInGroup(typeof(InitializationSystemGroup))]
     public partial class RegimentFactorySystem : SystemBase
     {
@@ -64,17 +70,25 @@ namespace KaizerWald
         private void AddToRegiments(NativeArray<Entity> regiments)
         {
             EntityManager.AddComponent<Tag_Uninitialize>(regiments);
-            
+            //PRESELECTION
             EntityManager.AddComponent<Flag_Preselection>(regiments);
             EntityManager.AddComponent<Filter_Preselection>(regiments);
-            
+            //SELECTION
             EntityManager.AddComponent<Flag_Selection>(regiments);
             EntityManager.AddComponent<Filter_Selection>(regiments);
+            //ANIMATION
+            EntityManager.AddComponent<Data_RegimentAnimationPlayed>(regiments);
+            EntityManager.AddComponent<Data_LookRotation>(regiments);
         }
 
         protected override void OnUpdate()
         {
             return;
+        }
+
+        protected override void OnStopRunning()
+        {
+            Debug.Log("End Factory System");
         }
     }
 }

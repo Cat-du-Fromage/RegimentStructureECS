@@ -162,9 +162,8 @@ namespace KaizerWald
             [ReadOnly] public AABB BoundsAABB;
             [ReadOnly] public float4x4 WorldToCameraMatrix;
             [ReadOnly] public float4x4 ProjectionMatrix;
-
             [WriteOnly, NativeDisableParallelForRestriction] public NativeParallelHashSet<Entity>.ParallelWriter RegimentsPreselected;
-            private void Execute(in Data_Regiment dataRegiment, in Translation position)
+            public void Execute(in Data_Regiment dataRegiment, in Translation position)
             {
                 float3 unitPositionInRect = position.Value.WorldToViewportPoint(WorldToCameraMatrix, ProjectionMatrix);
                 if (!BoundsAABB.Contains(unitPositionInRect)) return;

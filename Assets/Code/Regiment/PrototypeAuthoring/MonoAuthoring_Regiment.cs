@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace KaizerWald
@@ -49,26 +50,18 @@ namespace KaizerWald
                 SpaceBetweenUnitsZ = UnitSize.z + OffsetBetweenUnits,
                 UnitSize = UnitSize
             });
-        }
-    }
-    
-    [UpdateInGroup(typeof(GameObjectAfterConversionGroup))]
-    public partial class RegimentConversionGoSystem : GameObjectConversionSystem
-    {
-        protected override void OnUpdate()
-        {
-            Debug.Log("Pass RegimentConversionGoSystem");
-            /*
-            // Iterate over all authoring components of type FooAuthoring
-            Entities.ForEach((FooAuthoring input) =>
-            {
-                // Get the destination world entity associated with the authoring GameObject
-                //var entity = GetPrimaryEntity(input);
 
-                // Do the conversion and add the ECS component
-                //DstEntityManager.AddComponentData(entity);
-            });
-            */
+            dstManager.AddComponentData(entity, new Data_NumUnits() {Value = BaseNumUnits});
+            dstManager.AddComponentData(entity, new Data_MinLine() {Value = MinRow});
+            dstManager.AddComponentData(entity, new Data_MaxLine() {Value = MaxRow});
+            dstManager.AddComponentData(entity, new Data_UnitsPerLine() {Value = MinRow});
+            dstManager.AddComponentData(entity, new Data_UnitSize() {Value = UnitSize});
+            dstManager.AddComponentData(entity, new Data_SpaceBetweenUnitX() {Value = UnitSize.x + OffsetBetweenUnits});
+            dstManager.AddComponentData(entity, new Data_SpaceBetweenUnitZ() {Value = UnitSize.z + OffsetBetweenUnits});
+            
+            //float formationNumLine = BaseNumUnits / (float)MinRow;
+            //int totalLine = (int)math.ceil(BaseNumUnits / (float)MinRow);
+            dstManager.AddComponentData(entity, new Data_NumLine() {Value = (int)math.ceil(BaseNumUnits / (float)MinRow)});
         }
     }
 }

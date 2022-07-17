@@ -275,9 +275,18 @@
                     "initialStateCheck": true
                 },
                 {
-                    "name": "LeftMouseCancel",
+                    "name": "LeftMouse",
                     "type": "Button",
                     "id": "4d8ce39c-0724-4d27-9ebf-8ef0f46baa56",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "SpaceKey",
+                    "type": "Button",
+                    "id": "4571b060-11b2-46bf-a504-fa6485c8bdec",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
@@ -325,7 +334,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "LeftMouseCancel",
+                    "action": "LeftMouse",
                     "isComposite": true,
                     "isPartOfComposite": false
                 },
@@ -336,7 +345,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "LeftMouseCancel",
+                    "action": "LeftMouse",
                     "isComposite": false,
                     "isPartOfComposite": true
                 },
@@ -347,9 +356,20 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "LeftMouseCancel",
+                    "action": "LeftMouse",
                     "isComposite": false,
                     "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "fcbfb78b-3dcb-49dd-af99-830b2ff9b80d",
+                    "path": "<Keyboard>/space",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpaceKey",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 }
             ]
         },

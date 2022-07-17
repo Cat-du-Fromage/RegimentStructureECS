@@ -60,7 +60,7 @@ namespace KaizerWald
         public partial struct JGetRegimentSelected : IJobEntity
         {
             [WriteOnly] public NativeParallelHashMap<Entity, bool> RegimentUpdated;
-            private void Execute(Entity regimentEntity, ref Filter_Selection filter, in Flag_Selection flag)
+            public void Execute(Entity regimentEntity, ref Filter_Selection filter, in Flag_Selection flag)
             {
                 if (!filter.DidChange) return;
                 RegimentUpdated.Add(regimentEntity, flag.IsActive);

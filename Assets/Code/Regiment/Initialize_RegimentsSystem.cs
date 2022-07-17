@@ -27,7 +27,10 @@ namespace KaizerWald
             .ForEach((Entity regiment, in Data_RegimentClass regimentClass, in Data_PrefabsRegiment prefabs, in Translation position) =>
             {
                 CreateUnits(regiment, regimentClass, prefabs, position.Value);
-                CreatePlacements(regimentClass, prefabs);
+                CreatePlacements(regiment, regimentClass, prefabs, position.Value);
+                
+                DynamicBuffer<Buffer_Destinations> destinations = EntityManager.AddBuffer<Buffer_Destinations>(regiment);
+                destinations.EnsureCapacity(regimentClass.BaseNumUnits);
             }).Run();
             EntityManager.RemoveComponent<Tag_Uninitialize>(unInitializeRegiment);
             Enabled = false;
@@ -41,24 +44,32 @@ namespace KaizerWald
             
             for (int i = 0; i < units.Length; i++)
             {
+                EntityManager.SetName(units[i], $"Unit_Regiment_{regiment.Index}_{i}");
                 EntityManager.SetEnabled(units[i], true);
-                float3 position = GetPositionInRegiment(pos, i, 1);
+                
+                float3 position = GetPositionInRegiment(pos, i, 1, GetComponent<Data_MinLine>(regiment).Value);
                 EntityManager.SetComponentData(units[i], new Translation(){Value = position});
-
+                
                 //TODO : FIND A WAY TO DO THIS IN => "Initialize_UnitsSystem"
                 EntityManager.AddSharedComponentData(units[i], new Shared_RegimentEntity(){Value = regiment});
             }
         }
 
-        private void CreatePlacements(in Data_RegimentClass regimentClass,in Data_PrefabsRegiment prefabs)
+        private void CreatePlacements(Entity regiment, in Data_RegimentClass regimentClass,in Data_PrefabsRegiment prefabs, float3 pos)
         {
             using NativeArray<Entity> placements = new (regimentClass.BaseNumUnits, Allocator.Temp);
             EntityManager.Instantiate(prefabs.PrefabPlacement, placements);
+            for (int i = 0; i < placements.Length; i++)
+            {
+                float3 position = GetPositionInRegiment(pos, i, 1, GetComponent<Data_MinLine>(regiment).Value);
+                EntityManager.SetComponentData(placements[i], new Translation(){Value = new float3(position.x,0.05f,position.z)});
+                EntityManager.AddSharedComponentData(placements[i], new Shared_RegimentEntity(){Value = regiment});
+            }
         }
         
-        private float3 GetPositionInRegiment(float3 regimentPosition, int index, float unitSizeX)
+        private float3 GetPositionInRegiment(float3 regimentPosition, int index, float unitSizeX, int minLine)
         {
-            int row = 10;
+            int row = minLine;
                 
             //Coord according to index
             int z = index / row;
