@@ -26,31 +26,16 @@ namespace KaizerWald
         public FormationLineData(int numUnits, int unitsPerLine, float spaceBetweenUnitX)
         {
             UnitsPerLine = unitsPerLine;
-            NumLine = GetTotalLine(numUnits, unitsPerLine);
-            NumUnitsLastLine = GetNumUnitsLastLine(numUnits, unitsPerLine);
+            NumLine = (int)ceil(numUnits / (float)unitsPerLine);;
+            
+            int lastLineNumUnit = numUnits - ((numUnits / unitsPerLine) * unitsPerLine);
+            NumUnitsLastLine = select(lastLineNumUnit,unitsPerLine,lastLineNumUnit == 0);
+            
             SpaceBetweenUnitX = spaceBetweenUnitX;
             IsLastLineComplete = NumUnitsLastLine == UnitsPerLine;
         }
-        
-        public static int GetTotalLine(int numUnits, int numUnitPerLine)
-        {
-            float formationNumLine = numUnits / (float)numUnitPerLine;
-            int totalLine = (int)ceil(formationNumLine);
-            return totalLine;
-        }
-        
-        public static int GetNumUnitsLastLine(int numUnits, int numUnitPerLine)
-        {
-            //======================================================================================
-            //Lines information
-            float regimentNumLine = numUnits / (float)numUnitPerLine;
-            int numCompleteLine = (int)floor(regimentNumLine);
-            //======================================================================================
-            int lastLineNumUnit = numUnits - (numCompleteLine * numUnitPerLine);
-            return select(lastLineNumUnit,numUnitPerLine,lastLineNumUnit == 0);
-        }
-        
-        public static float3 GetLastLineOffset(FormationLineData formation, in float3 lineDirection)
+
+        public static float3 GetLastLineOffset(in FormationLineData formation, in float3 lineDirection)
         {
             if (formation.IsLastLineComplete) return float3.zero;
             float offset = (formation.UnitsPerLine - formation.NumUnitsLastLine) * 0.5f;
@@ -105,9 +90,13 @@ namespace KaizerWald
                     FormationsData = formationsData,
                 };
                 job.ScheduleParallel(placementQuery);
-                placementQuery.ResetFilter();
             }
             formationsData.Dispose(Dependency);
+
+            for (int regimentIndex = 0; regimentIndex < regimentSelected2.Length; regimentIndex++)
+            {
+                
+            }
             
             SetSingleton(new Filter_PlacementUpdate() { DidChange = false });
         }

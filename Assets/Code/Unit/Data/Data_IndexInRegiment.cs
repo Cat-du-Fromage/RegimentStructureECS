@@ -5,9 +5,8 @@ using Unity.Mathematics;
 
 namespace KaizerWald
 {
-    [Serializable]
-    public struct Data_Regiment : ISystemStateComponentData
+    public struct Data_IndexInRegiment : ISystemStateComponentData
     {
-        public Entity Value;
+        public int Value;
     }
 }

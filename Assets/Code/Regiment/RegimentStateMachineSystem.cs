@@ -46,7 +46,6 @@ namespace KaizerWald
     public partial struct JSetUnitsAnimation : IJobEntity
     {
         [ReadOnly] public int Animation;
-        
         public void Execute(ref Data_AnimationPlayed animationToPlay)
         {
             animationToPlay.Value = (FusilierClips)Animation;

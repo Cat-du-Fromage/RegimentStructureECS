@@ -29,5 +29,15 @@ namespace KaizerWald
             }
             em.RemoveComponent<T>(entity);
         }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void SwapComponent<T>(this EntityManager em, Entity e1, Entity e2) where T : struct, IComponentData
+        {
+            T index1 = em.GetComponentData<T>(e1);
+            T index2 = em.GetComponentData<T>(e2);
+            
+            em.SetComponentData(e1,index2);
+            em.SetComponentData(e2,index1);
+        }
     }
 }

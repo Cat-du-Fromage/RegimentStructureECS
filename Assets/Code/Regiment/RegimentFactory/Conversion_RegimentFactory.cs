@@ -17,26 +17,32 @@ namespace KaizerWald
     
     public struct TempData_RegimentOrders : IBufferElementData
     {
+        public bool IsPlacer;
         public int Number;
         public Entity RegimentPrefab;
+        public float3 SpawnStartPosition;
     }
     
     [UpdateAfter(typeof(GameObjectAfterConversionGroup))]
     [DisallowMultipleComponent]
     public class Conversion_RegimentFactory : MonoBehaviour, IConvertGameObjectToEntity, IDeclareReferencedPrefabs
     {
+        public bool IsPlayer;
         [SerializeField] private RegimentOrders[] Orders;
         
         public void Convert(Entity entity, EntityManager dstManager, GameObjectConversionSystem conversionSystem)
         {
             DynamicBuffer<TempData_RegimentOrders> buffer = dstManager.AddBuffer<TempData_RegimentOrders>(entity);
             buffer.EnsureCapacity(Orders.Length);
+            
             for (int i = 0; i < Orders.Length; i++)
             {
                 buffer.Add(new TempData_RegimentOrders()
                 {
+                    IsPlacer = this.IsPlayer,
                     Number = Orders[i].number,
-                    RegimentPrefab = conversionSystem.GetPrimaryEntity(Orders[i].regimentPrefab)
+                    RegimentPrefab = conversionSystem.GetPrimaryEntity(Orders[i].regimentPrefab),
+                    SpawnStartPosition = (float3)transform.position
                 });
             }
         }

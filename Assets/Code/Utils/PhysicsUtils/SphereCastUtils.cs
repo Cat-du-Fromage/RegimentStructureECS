@@ -91,7 +91,6 @@ namespace KaizerWald
         [ReadOnly] public CollisionFilter Filter;
         [ReadOnly] public CollisionWorld World;
         [WriteOnly] public NativeReference<Entity> RegimentHit;
-
         
         public unsafe void Execute()
         {

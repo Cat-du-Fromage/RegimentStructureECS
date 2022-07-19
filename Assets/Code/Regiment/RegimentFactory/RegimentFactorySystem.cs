@@ -8,6 +8,11 @@ using UnityEngine;
 
 namespace KaizerWald
 {
+    public struct Data_SpawnAxeDirection : IComponentData
+    {
+        public int X;
+        public int Z;
+    }
     public struct Data_RegimentAnimationPlayed : IComponentData
     {
         public FusilierClips Value;
@@ -27,38 +32,72 @@ namespace KaizerWald
         protected override void OnStartRunning()
         {
             NativeArray<Entity> factories = factoryQuery.ToEntityArray(Allocator.Temp);
-
             
             for (int i = 0; i < factories.Length; i++)
             {
+                quaternion rotationFactory = GetComponent<LocalToWorld>(factories[i]).Rotation;
+                Data_SpawnAxeDirection axesDir = new Data_SpawnAxeDirection()
+                {
+                    X = (int)GetComponent<LocalToWorld>(factories[i]).Right.x,
+                    Z = (int)GetComponent<LocalToWorld>(factories[i]).Forward.z
+                };
+                
+                //Debug.Log($"x: {axesDir.X}; z: {axesDir.Z}");
                 DynamicBuffer<TempData_RegimentOrders> data = GetBuffer<TempData_RegimentOrders>(factories[i]);
-
-                //float xOffset = 0;
+                
                 foreach (TempData_RegimentOrders t in data)
                 {
-                    NativeArray<Entity> regiments = new (data[i].Number, Allocator.Temp);
-                    EntityManager.Instantiate(data[i].RegimentPrefab, regiments);
+                    NativeArray<Entity> regiments = new (t.Number, Allocator.Temp);
+                    EntityManager.Instantiate(t.RegimentPrefab, regiments);
+
+                    if (t.IsPlacer)
+                    {
+                        EntityManager.AddComponent<Tag_Player>(regiments);
+                    }
+                    else
+                    {
+                        EntityManager.AddComponent<Tag_Enemy>(regiments);
+                    }
                     
                     RemoveFromRegiments(regiments);
                     
                     AddToRegiments(regiments);
                     
-                    SetRegimentPosition(regiments);
+                    SetRegimentPosition(regiments, t.IsPlacer, t.SpawnStartPosition, rotationFactory, axesDir);
                 }
+                
             }
-            EntityManager.DestroyEntity(factoryQuery);
+            //EntityManager.DestroyEntity(factoryQuery);
             Enabled = false;
         }
+        
+        protected override void OnUpdate()
+        {
+            return;
+        }
 
-        private void SetRegimentPosition(NativeArray<Entity> regiments)
+        protected override void OnStopRunning()
+        {
+            Debug.Log("End Factory System");
+        }
+
+        private void SetRegimentPosition(NativeArray<Entity> regiments, bool isPlayer, float3 basePosition, quaternion rotation, Data_SpawnAxeDirection axesDir)
         {
             float xOffset = 0;
             for (int regimentIndex = 0; regimentIndex < regiments.Length; regimentIndex++)
             {
-                float3 position = new float3(xOffset, 0, 0);
+                float3 position = new float3(xOffset, 0, basePosition.z);
                 Data_RegimentClass regClass = GetComponent<Data_RegimentClass>(regiments[regimentIndex]);
+                
+                //DIFFERENCE PLAYER - ENEMY
+                int unitPerLine = isPlayer ? regClass.MinRow : regClass.MaxRow;
+                SetComponent(regiments[regimentIndex], new Data_UnitsPerLine(){Value = unitPerLine});
+                
                 SetComponent(regiments[regimentIndex], new Translation(){Value = position});
-                xOffset += (regClass.MinRow + 4) * regClass.SpaceBetweenUnitsX;
+                xOffset += (unitPerLine + 4) * regClass.SpaceBetweenUnitsX;
+                SetComponent(regiments[regimentIndex], new Rotation(){Value = rotation});
+
+                EntityManager.AddComponentData(regiments[regimentIndex], axesDir);
             }
         }
 
@@ -79,16 +118,13 @@ namespace KaizerWald
             //ANIMATION
             EntityManager.AddComponent<Data_RegimentAnimationPlayed>(regiments);
             EntityManager.AddComponent<Data_LookRotation>(regiments);
+            
+            for (int i = 0; i < regiments.Length; i++)
+            {
+                EntityManager.AddBuffer<Buffer_Units>(regiments[i]);
+            }
         }
 
-        protected override void OnUpdate()
-        {
-            return;
-        }
-
-        protected override void OnStopRunning()
-        {
-            Debug.Log("End Factory System");
-        }
+        
     }
 }

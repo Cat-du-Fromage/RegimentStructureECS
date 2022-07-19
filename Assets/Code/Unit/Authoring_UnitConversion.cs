@@ -11,7 +11,7 @@ namespace KaizerWald
         {
             dstManager.AddComponent<Tag_Uninitialize>(entity);
             dstManager.AddComponent<Tag_Unit>(entity);
-            dstManager.AddComponent<Data_Regiment>(entity);
+            //dstManager.AddComponent<Data_Regiment>(entity);
         }
     }
 }

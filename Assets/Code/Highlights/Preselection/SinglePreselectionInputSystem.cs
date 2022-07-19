@@ -53,6 +53,8 @@ namespace KaizerWald
             RequireSingletonForUpdate<Tag_Camera>();
             
             mouse = Mouse.current;
+            
+            this.RegisterPhysicsRuntimeSystemReadOnly();
         }
 
         protected override void OnUpdate()
@@ -110,9 +112,8 @@ namespace KaizerWald
 
             CollisionFilter unitFilter = GetSingleton<Data_UnitCollisionFilter>().Value;
             
-            JobHandle jobHandle = world.SingleSphereCast(origin, Radius, direction, regimentHit, DistanceCast, unitFilter, Dependency);
-            jobHandle.Complete();
-            
+            world.SingleSphereCast(origin, Radius, direction, regimentHit, DistanceCast, unitFilter, Dependency).Complete();
+
             if (regimentHit.Value == Entity.Null) return Entity.Null;
             Entity regiment = EntityManager.GetSharedComponentData<Shared_RegimentEntity>(regimentHit.Value).Value;
             return previousRegimentHit == regiment ? previousRegimentHit : regiment;

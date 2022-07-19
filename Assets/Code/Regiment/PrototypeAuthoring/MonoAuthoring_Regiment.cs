@@ -38,6 +38,7 @@ namespace KaizerWald
             Entity placement = conversionSystem.GetPrimaryEntity(PrefabPlacement);
             
             dstManager.AddComponent<Tag_Regiment>(entity);
+
             dstManager.AddComponentData(entity, new Data_PrefabsRegiment(){UnitPrefab = unit, PrefabPlacement = placement});
             
             dstManager.AddComponentData(entity, new Data_RegimentClass()

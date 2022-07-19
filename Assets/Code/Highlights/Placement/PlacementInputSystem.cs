@@ -21,13 +21,14 @@ namespace KaizerWald
     public partial class PlacementInputSystem : SystemBase, PlayerControls.IDynamicPlacementActions
     {
         private Entity placementManager;
+        
         private EntityQuery regimentsQuery;
         private EntityQuery unitsSelectedQuery;
         //Dynamic Placement
         private EntityQuery enabledPlacementsQuery;
         private EntityQuery disabledPlacementsQuery;
         //Static Placement
-        private EntityQuery staticPlacementsQuery;
+        //private EntityQuery staticPlacementsQuery;
 
         private readonly float screenWidth = Screen.width;
         private readonly float screenHeight = Screen.height;
@@ -42,7 +43,8 @@ namespace KaizerWald
 
         private List<Shared_RegimentEntity> sharedRegiments;
 
-        private bool IsDrag => lengthsq(EndMousePosition - StartMousePosition) >= 128;
+        private bool IsDrag => distancesq(EndMousePosition,StartMousePosition) >= 2;
+        //private bool IsDrag => lengthsq(EndMousePosition - StartMousePosition) >= 32;
         private float3 StartMousePosition => GetSingleton<Data_StartPlacement>().Value;
         private float3 EndMousePosition => GetSingleton<Data_EndPlacement>().Value;
 
@@ -71,7 +73,7 @@ namespace KaizerWald
             unitsSelectedQuery = EntityManager.CreateEntityQuery(typeof(Tag_Unit), typeof(Shared_RegimentEntity), typeof(Translation));
             regimentsQuery = EntityManager.CreateEntityQuery(typeof(Tag_Regiment));
             
-            staticPlacementsQuery = EntityManager.CreateEntityQuery(typeof(Tag_StaticPlacement), typeof(Shared_RegimentEntity));
+            //staticPlacementsQuery = EntityManager.CreateEntityQuery(typeof(Tag_StaticPlacement), typeof(Shared_RegimentEntity));
             CreateInputManager();
         }
 
@@ -118,7 +120,6 @@ namespace KaizerWald
                 {
                    EntityManager.GetComponentObject<ParticleSystem>(units[i]).Play();
                 }
-                
             }
             */
             return;
@@ -139,6 +140,7 @@ namespace KaizerWald
                     OnPerformed(hitPosition);
                     return;
                 case InputActionPhase.Canceled when IsTerrainHit:
+                    //Debug.Log($"Pass: {StartMousePosition}; end: {EndMousePosition}; distsq: {distancesq(EndMousePosition,StartMousePosition)}");
                     RegimentCallback_DestinationsBuffers(); //Send Message
                     OnCancel();
                     return;
@@ -224,7 +226,6 @@ namespace KaizerWald
             if (context.started)
             {
                 NativeArray<Entity> regiments = regimentsQuery.ToEntityArray(Allocator.Temp);
-                Debug.Log(regiments.Length);
                 foreach (Entity regiment in regiments)
                 {
                     Shared_RegimentEntity filter = new Shared_RegimentEntity() { Value = regiment };
@@ -235,7 +236,6 @@ namespace KaizerWald
                     unitsSelectedQuery.SetSharedComponentFilter(filter);
                     NativeArray<Translation> positions = unitsSelectedQuery.ToComponentDataArray<Translation>(Allocator.Temp);
                     enabledPlacementsQuery.CopyFromComponentDataArray(positions);
-                    //positions.Dispose();
                 }
                 disabledPlacementsQuery.ResetFilter();
                 enabledPlacementsQuery.ResetFilter();
