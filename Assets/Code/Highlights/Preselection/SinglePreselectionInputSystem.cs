@@ -74,7 +74,7 @@ namespace KaizerWald
 
         private void SetPreselectionFlag(in Entity regiment, bool isActive)
         {
-            if (regiment == Entity.Null) return;
+            if (regiment == Entity.Null || !EntityManager.Exists(regiment)) return;
             SetComponent(regiment, new Flag_Preselection(){IsActive = isActive});
             SetComponent(regiment, new Filter_Preselection(){DidChange = true});
         }
@@ -114,7 +114,8 @@ namespace KaizerWald
             
             world.SingleSphereCast(origin, Radius, direction, regimentHit, DistanceCast, unitFilter, Dependency).Complete();
 
-            if (regimentHit.Value == Entity.Null) return Entity.Null;
+            if (regimentHit.Value == Entity.Null || !EntityManager.Exists(regimentHit.Value)) return Entity.Null;
+            
             Entity regiment = EntityManager.GetSharedComponentData<Shared_RegimentEntity>(regimentHit.Value).Value;
             return previousRegimentHit == regiment ? previousRegimentHit : regiment;
         }

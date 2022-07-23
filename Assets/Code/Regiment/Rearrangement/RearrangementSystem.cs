@@ -63,84 +63,108 @@ namespace KaizerWald
             };
             unitKilledQuery = EntityManager.CreateEntityQuery(description);
             RequireForUpdate(unitKilledQuery);
+            //Enabled = false;
         }
+        /*
+        [BurstCompile(CompileSynchronously = true)]
+        public partial struct JRearrange : IJobEntityBatch
+        {
 
+            public BufferTypeHandle<Buffer_Units> BufferUnitsTypeHandle;
+
+            public void Execute(ArchetypeChunk batchInChunk, int batchIndex)
+            {
+                BufferAccessor<Buffer_Units> units = batchInChunk.GetBufferAccessor(BufferUnitsTypeHandle);
+
+                for (int i = 0; i < batchInChunk.Count; i++)
+                {
+                    //batchInChunk.
+                }
+
+                //NativeArray<Entity> regiments = batchInChunk.GetNativeArray(RegimentTypeHandle).Reinterpret<Entity>();
+                //NativeArray<int> indexInRegiment = batchInChunk.GetNativeArray(IndexInRegimentTypeHandle).Reinterpret<int>();
+            }
+            
+            private NativeList<int> GetDeadIndicesForRegiment(NativeParallelMultiHashMap<Entity, Entity> pairRegimentUnit, Entity regiment)
+            {
+                NativeList<int> deadIndicesInRegiment = new (pairRegimentUnit.CountValuesForKey(regiment), Allocator.TempJob);
+                NativeParallelMultiHashMap<Entity, Entity>.Enumerator unitsInKey = pairRegimentUnit.GetValuesForKey(regiment);
+                foreach (Entity unity in unitsInKey)
+                {
+                    int indexInRegiment = GetComponent<Data_IndexInRegiment>(unity).Value;
+                    deadIndicesInRegiment.Add(indexInRegiment);
+                }
+                return deadIndicesInRegiment;
+            }
+        }
+        */
+        
+        
         protected override void OnUpdate()
         {
             using NativeList<Entity> unitsToMove = new(2, Allocator.TempJob);
-            //using NativeParallelHashMap<Entity, float3> unitsToMove = new(2, Allocator.TempJob);
 
             //Query dead units
             using NativeArray<Entity> deadUnits = unitKilledQuery.ToEntityArray(Allocator.TempJob);
             using NativeParallelMultiHashMap<Entity, Entity> pairRegimentUnit = GetPairRegimentDeadUnit(deadUnits);
-
-            using NativeArray<Entity> uniqueKeyRegiment = pairRegimentUnit.GetKeyArray(Allocator.TempJob);
-
             
-            for (int i = 0; i < uniqueKeyRegiment.Length; i++) //LOOP REGIMENT CAREFULL!
+            using NativeArray<Entity> uniqueKeyRegiment = pairRegimentUnit.GetKeyArray(Allocator.TempJob);
+            int numUniqueKey = uniqueKeyRegiment.Unique();
+            
+            for (int i = 0; i < numUniqueKey; i++) //LOOP REGIMENT CAREFULL!
             {
                 Entity regiment = uniqueKeyRegiment[i];
                 
                 //Needed for GetIndexAlgorithm
                 DynamicBuffer<Buffer_Units> unitsBuffer = GetBuffer<Buffer_Units>(regiment);
-                using NativeArray<Entity> regimentUnits = unitsBuffer.Reinterpret<Entity>().ToNativeArray(Allocator.TempJob);
-                
-                //TODO: MAKE A NativeSortedList
+                NativeArray<Entity> regimentUnits = unitsBuffer.Reinterpret<Entity>().ToNativeArray(Allocator.Temp);
+
                 using NativeList<int> deadIndicesInRegiment = GetDeadIndicesForRegiment(pairRegimentUnit, regiment);
-                
+                deadIndicesInRegiment.Sort();
+                int numBaseDead = deadIndicesInRegiment.Length;
+
                 while (deadIndicesInRegiment.Length != 0)
                 {
                     DynamicFormation formation = GetFormationRegiment(regiment);
 
                     int deadIndex = deadIndicesInRegiment[0];
-                    int swapIndex = GetIndexAround(regimentUnits, deadIndex, formation);
-                    Debug.Log($"deadIndex: {deadIndex}; swapIndex: {swapIndex}");
-
+                    int swapIndex = RearrangmentUtils.GetIndexAround
+                    (
+                        unitKilledQuery,
+                        regimentUnits,
+                        deadIndex,
+                        formation.NumLine,
+                        formation.UnitsPerLine, 
+                        formation.NumUnitsLastLine
+                    );
+                    
                     if (swapIndex == -1)
                     {
                         deadIndicesInRegiment.RemoveAt(0);
                         break;
                     }
-
-                    SwapIndexInRegiment(unitsBuffer[deadIndex], unitsBuffer[swapIndex]);
-
-                    (unitsBuffer[deadIndex], unitsBuffer[swapIndex]) =
-                        (unitsBuffer[swapIndex], unitsBuffer[deadIndex]);
-                    unitsToMove.Add(unitsBuffer[deadIndex]);
-
+                    
+                    SwapIndexInRegiment(regimentUnits[deadIndex], regimentUnits[swapIndex]);
+                    unitsToMove.Add(regimentUnits[swapIndex]);
+                    //(unitsBuffer[deadIndex], unitsBuffer[swapIndex]) = (unitsBuffer[swapIndex], unitsBuffer[deadIndex]);
+                    (regimentUnits[deadIndex], regimentUnits[swapIndex]) = (regimentUnits[swapIndex], regimentUnits[deadIndex]);
+                    
                     deadIndicesInRegiment.RemoveAt(0);
                     deadIndicesInRegiment.Add(swapIndex);
-                    deadIndicesInRegiment.SortJob().Schedule().Complete();
+                    deadIndicesInRegiment.Sort();
                 }
+                
+                int numUnit = GetComponent<NumberUnits>(regiment).Value;
+                SetComponent(regiment, new NumberUnits(){Value = numUnit-numBaseDead});
+                unitsBuffer.CopyFrom(regimentUnits.Reinterpret<Buffer_Units>());
+                unitsBuffer.RemoveRange((unitsBuffer.Length) - numBaseDead, numBaseDead);
             }
-            
             EntityManager.AddComponent<Tag_MoveRearrange>(unitsToMove.AsArray());
             
             EntityManager.RemoveComponent(unitKilledQuery, new ComponentTypes(typeof(Data_Regiment), typeof(Data_IndexInRegiment)));
             EntityManager.DestroyEntity(unitKilledQuery);
         }
-        /*
-        public void ReplaceStaticPlacements(Entity regiment)
-        {
-            FormationData tempsFormation = regiment.Formation;
-            if (tempsFormation.NumLine == 1 || tempsFormation.IsLastLineComplete) return;
-
-            float unitSpace = regiment.RegimentClass.SpaceSizeBetweenUnit;
-            Vector3 offset = tempsFormation.GetLastLineOffset(regiment.RegimentClass.SpaceSizeBetweenUnit);
-            
-            int startIndex = (tempsFormation.NumCompleteLine - 1) * tempsFormation.UnitsPerLine;
-            int firstHighlightIndex = startIndex + tempsFormation.UnitsPerLine;
-
-            Vector3 startPosition = Records[regiment.RegimentID][startIndex].HighlightTransform.position;
-            startPosition += (Vector3)tempsFormation.ColumnDirection * unitSpace + offset;
-            
-            for (int i = 0; i < tempsFormation.NumUnitsLastLine; i++)
-            {
-                Vector3 linePosition = startPosition + (Vector3)tempsFormation.LineDirection * (unitSpace * i);
-                Records[regiment.RegimentID][firstHighlightIndex + i].HighlightTransform.position = linePosition;
-            }
-        }
-*/
+        
         public void SwapIndexInRegiment(Entity deadUnit, Entity swapedUnit)
         {
             Data_IndexInRegiment indexDead = GetComponent<Data_IndexInRegiment>(deadUnit);
@@ -152,28 +176,26 @@ namespace KaizerWald
 
         public DynamicFormation GetFormationRegiment(Entity regiment)
         {
-            int numUnits = GetComponent<Data_NumUnits>(regiment).Value;
-            int unitsPerLine = GetComponent<Data_UnitsPerLine>(regiment).Value;
+            int numUnits = GetComponent<NumberUnits>(regiment).Value;
+            int unitsPerLine = GetComponent<UnitsPerLine>(regiment).Value;
             return new DynamicFormation(numUnits, unitsPerLine);
         }
+        
         private NativeList<int> GetDeadIndicesForRegiment(NativeParallelMultiHashMap<Entity, Entity> pairRegimentUnit, Entity regiment)
         {
-            NativeList<int> deadIndicesInRegiment = new (pairRegimentUnit.CountValuesForKey(regiment), Allocator.TempJob);
-                
+            NativeList<int> deadIndicesInRegiment = new (pairRegimentUnit.CountValuesForKey(regiment), Allocator.Temp);
             NativeParallelMultiHashMap<Entity, Entity>.Enumerator unitsInKey = pairRegimentUnit.GetValuesForKey(regiment);
             foreach (Entity unity in unitsInKey)
             {
                 int indexInRegiment = GetComponent<Data_IndexInRegiment>(unity).Value;
-                Debug.Log(indexInRegiment);
                 deadIndicesInRegiment.Add(indexInRegiment);
             }
-
             return deadIndicesInRegiment;
         }
         
         private NativeParallelMultiHashMap<Entity, Entity> GetPairRegimentDeadUnit(NativeArray<Entity> deadUnits)
         {
-            NativeParallelMultiHashMap<Entity, Entity> pairRegimentUnit = new(deadUnits.Length, Allocator.TempJob);
+            NativeParallelMultiHashMap<Entity, Entity> pairRegimentUnit = new(deadUnits.Length, Allocator.Temp);
             foreach (Entity deadUnit in deadUnits)
             {
                 Entity regiment = GetComponent<Data_Regiment>(deadUnit).Value;
@@ -183,99 +205,52 @@ namespace KaizerWald
         }
 
         
-/*
-        public void ManualRearrange()
-        {
-            NativeArray<int> deadIndices = unitKilledQuery.ToComponentDataArray<Data_IndexInRegiment>(Allocator.TempJob).Reinterpret<int>();
-            NativeArray<Entity> regiments = unitKilledQuery.ToComponentDataArray<Data_Regiment>(Allocator.TempJob).Reinterpret<Entity>();
-            
-            int deadIndex = deadIndices[0];
-            Entity regiment = regiments[0];
-
-            NativeArray<Entity> units = GetBuffer<Buffer_Units>(regiment).Reinterpret<Entity>().ToNativeArray(Allocator.TempJob);
-            int swapIndex = GetIndexAround(units ,deadIndex, Formation);
-
-            if (swapIndex == -1)
-            {
-                DeadUnits.Remove(deadIndex);
-                return;
-            }
-            
-            //TODO: need to replace all units in last Line
-
-            ReplaceStaticPlacements();
-            Vector3 positionToGo = HighlightCoordinator.StaticPlaceRegister.Records[RegimentID][deadIndex].HighlightTransform.position;
-            
-            //Index in regiment n'est pas clair, il faut voir quand le changer!
-            (Units[deadIndex].IndexInRegiment, Units[swapIndex].IndexInRegiment) = (Units[swapIndex].IndexInRegiment, Units[deadIndex].IndexInRegiment);
-            
-            rearrangementSequence.Reorganize(Units[swapIndex], positionToGo);
-            
-            (Units[deadIndex], Units[swapIndex]) = (Units[swapIndex], Units[deadIndex]);
-            (UnitsTransform[deadIndex], UnitsTransform[swapIndex]) = (UnitsTransform[swapIndex], UnitsTransform[deadIndex]);
-            
-            DeadUnits.Remove(deadIndex);
-            DeadUnits.Add(swapIndex);
-        }
-*/
-        [BurstCompile(CompileSynchronously = true)]
-        public partial struct JRearrange : IJobEntityBatch
-        {
-            public ComponentTypeHandle<Data_Regiment> RegimentTypeHandle;
-            public ComponentTypeHandle<Translation> IndexInRegimentTypeHandle;
-
-            public void Execute(ArchetypeChunk batchInChunk, int batchIndex)
-            {
-                NativeArray<Entity> regiments = batchInChunk.GetNativeArray(RegimentTypeHandle).Reinterpret<Entity>();
-                NativeArray<int> indexInRegiment = batchInChunk.GetNativeArray(IndexInRegimentTypeHandle).Reinterpret<int>();
-            }
-        }
-        
         public int GetIndexAround(NativeArray<Entity> units, int index, in DynamicFormation formation)
         {
-            (int coordX, int coordY) = index.GetXY(formation.UnitsPerLine);
+            //(int coordX, int coordY) = index.GetXY(formation.UnitsPerLine);
+            int coordInRegimentY = index / formation.UnitsPerLine;
+            int coordInRegimentX = index - (coordInRegimentY * formation.UnitsPerLine);
             
-            int totalLine = formation.NumLine;
-            int lastLineIndex = totalLine - 1;
+            int lastLineIndex = formation.NumLine - 1;
 
-            if (coordY == formation.NumLine - 1)
+            if (coordInRegimentY == lastLineIndex)
             {
-                return RearrangeInline(units, coordX, coordY, formation.UnitsPerLine, formation.LastIndex);
+                return RearrangeInline(units, coordInRegimentX, coordInRegimentY, formation.UnitsPerLine, formation.LastIndex);
             }
-
-            for (int line = 1; line < totalLine-coordY; line++)
+            //for (int line = coordInRegimentY + 1; line < formation.NumLine; line++)
+            for (int line = 1; line < formation.NumLine - coordInRegimentY; line++)
             {
-                int lineIndexChecked = coordY + line;
+                //We first check if there is something to check behind
+                if (!IsNextRowValid(units, coordInRegimentY, formation)) continue;
+                
+                int lineIndexChecked = coordInRegimentY + line;
                 
                 int lineWidth = lineIndexChecked == lastLineIndex ? formation.NumUnitsLastLine : formation.UnitsPerLine;
                 int lastLineIndexChecked = lineWidth - 1;
 
-                bool2 leftRightClose = new (coordX == 0, coordX == lastLineIndexChecked);
+                bool2 leftRightClose = new (coordInRegimentX == 0, coordInRegimentX == lastLineIndexChecked);
 
                 //We first check if there is something to check behind
-                if (!IsNextRowValid(units, coordY, formation)) continue;
+                //if (!IsNextRowValid(units, coordY, formation)) continue;
 
                 int indexUnit = -1;
                 
                 for (int i = 0; i <= lineWidth; i++) // 0 because we check unit right behind
                 {
-                    //Check Unit Behind
+                    //Check Unit Behind : MOVE THIS OUT and start at 1 insstead
                     if (i == 0)
                     {
-                        indexUnit = mad(coordY + line, formation.UnitsPerLine, coordX);
+                        indexUnit = mad(coordInRegimentY + line, formation.UnitsPerLine, coordInRegimentX);
 
                         //Check if we pick on the last line: then adjust considering if the line is complete or not
-                        if (coordY + line == formation.NumLine - 1)
+                        if (coordInRegimentY + line == formation.NumLine - 1)
                         {
                             int unitBehindIndex = GetUnitBehindInUnEvenLastLine(indexUnit, formation);
                             indexUnit = select(unitBehindIndex, min(indexUnit, formation.NumUnits - 1), formation.IsEven);
                         }
 
-                        if (IsUnitValid(units[indexUnit]))
-                        {
-                            return indexUnit;
-                        }
-                        
+                        if (IsUnitValid(units[indexUnit])) return indexUnit;
+
                         leftRightClose = IsLeftRightClose(indexUnit, formation.NumUnits, lineWidth);
                         continue;
                     }
@@ -284,42 +259,43 @@ namespace KaizerWald
                     //Check Left/Negative Index
                     if (!leftRightClose.x)
                     {
-                        int x = min(coordX, lineWidth) - i;
-                        indexUnit = new int2(x, coordY + line).GetIndex(formation.UnitsPerLine);
+                        int x = min(coordInRegimentX, lineWidth) - i;
+                        indexUnit = new int2(x, coordInRegimentY + line).GetIndex(formation.UnitsPerLine);
 
-                        if (units[indexUnit] != Entity.Null) return indexUnit;
-                        leftRightClose.x = min(coordX, lineWidth) - i == 0;
+                        if (indexUnit < units.Length && IsUnitValid(units[indexUnit])) return indexUnit;
+                        leftRightClose.x = min(coordInRegimentX, lineWidth) - i == 0;
                     }
 
                     //Check Right/Positiv Index
                     if (!leftRightClose.y)
                     {
-                        indexUnit = new int2(coordX + i, coordY + line).GetIndex(formation.UnitsPerLine);
+                        indexUnit = new int2(coordInRegimentX + i, coordInRegimentY + line).GetIndex(formation.UnitsPerLine);
                         
-                        if(units[indexUnit] != Entity.Null) return indexUnit;
-                        leftRightClose.y = coordX + i == lastLineIndexChecked;
+                        if(indexUnit < units.Length && IsUnitValid(units[indexUnit])) return indexUnit;
+                        leftRightClose.y = coordInRegimentX + i == lastLineIndexChecked;
                     }
                     
-                    
-                    //if (IsRightValid(formation.UnitsPerLine)) return indexUnit;
-                    //if (IsLeftValid(formation.UnitsPerLine)) return indexUnit;
+                    /*
+                    if (IsRightValid(formation.UnitsPerLine)) return indexUnit;
+                    if (IsLeftValid(formation.UnitsPerLine)) return indexUnit;
+                    */
                     //No more unit to check in this line
                     if (all(leftRightClose)) break;
                     
                     bool IsRightValid(int unitsPerLine)
                     {
                         if (leftRightClose.x) return false;
-                        int x = min(coordX, lineWidth) - i;
-                        indexUnit = mad(coordY + line, unitsPerLine, x);
-                        leftRightClose.x = min(coordX, lineWidth) - i == 0;
+                        int x = min(coordInRegimentX, lineWidth) - i;
+                        indexUnit = mad(coordInRegimentY + line, unitsPerLine, x);
+                        leftRightClose.x = min(coordInRegimentX, lineWidth) - i == 0;
                         return IsUnitValid(units[indexUnit]);
                     }
 
                     bool IsLeftValid(int unitsPerLine)
                     {
                         if (leftRightClose.y) return false;
-                        indexUnit = new int2(coordX + i, coordY + line).GetIndex(unitsPerLine);
-                        leftRightClose.y = coordX + i == lastLineIndexChecked;
+                        indexUnit = new int2(coordInRegimentX + i, coordInRegimentY + line).GetIndex(unitsPerLine);
+                        leftRightClose.y = coordInRegimentX + i == lastLineIndexChecked;
                         return IsUnitValid(units[indexUnit]);
                     }
                 }
@@ -327,17 +303,20 @@ namespace KaizerWald
             return -1;
         }
         
-        private bool IsUnitValid(Entity unit) => unit != Entity.Null && !unitKilledQuery.Matches(unit);
-        
+        private bool IsUnitValid(Entity unit)
+        {
+            return unit != Entity.Null && !unitKilledQuery.Matches(unit);
+        }
+
         private bool IsNextRowValid(NativeArray<Entity> units, int yLine, in DynamicFormation formation)
         {
-            int nextYLine = yLine + 1;
+            int nextYLineIndex = yLine + 1;
             int totalLine = formation.NumLine;
             
-            if (nextYLine > totalLine - 1) return false;
-            int numUnitOnLine = nextYLine == totalLine - 1 ? formation.NumUnitsLastLine : formation.UnitsPerLine;
+            if (nextYLineIndex > totalLine - 1) return false;
+            int numUnitOnLine = nextYLineIndex == totalLine - 1 ? formation.NumUnitsLastLine : formation.UnitsPerLine;
             
-            NativeSlice<Entity> lineToCheck = new (units,nextYLine * formation.UnitsPerLine, numUnitOnLine);
+            NativeSlice<Entity> lineToCheck = new (units,nextYLineIndex * formation.UnitsPerLine, numUnitOnLine);
             int numInvalid = 0;
             foreach (Entity unit in lineToCheck)
             {
@@ -360,8 +339,17 @@ namespace KaizerWald
         
         private int RearrangeInline(NativeArray<Entity> units, int coordX, int coordY, int unitPerLine, int lastIndexFormation)
         {
-            int increment = 1;
+            //int increment = 1;
             int fullIndex = mad(coordY, unitPerLine, coordX);
+
+            int maxIteration = units.Length - fullIndex;
+            for (int i = 1; i < maxIteration; i++)
+            {
+                int xToCheck = coordX + i;
+                fullIndex = mad(coordY, unitPerLine, xToCheck);
+                if(IsUnitValid(units[fullIndex])) return fullIndex;
+            }
+            /*
             while (fullIndex < lastIndexFormation)
             {
                 int xToCheck = coordX + increment;
@@ -369,6 +357,7 @@ namespace KaizerWald
                 if(IsUnitValid(units[fullIndex])) return fullIndex;
                 increment++;
             }
+            */
             return -1;
         }
 

@@ -60,6 +60,13 @@ namespace KaizerWald
             dstManager.AddComponentData(entity, new Data_SpaceBetweenUnitX() {Value = UnitSize.x + OffsetBetweenUnits});
             dstManager.AddComponentData(entity, new Data_SpaceBetweenUnitZ() {Value = UnitSize.z + OffsetBetweenUnits});
             
+            dstManager.AddComponentData(entity, new NumberUnits() {Value = BaseNumUnits});
+            dstManager.AddComponentData(entity, new MinLine() {Value = MinRow});
+            dstManager.AddComponentData(entity, new MaxLine() {Value = MaxRow});
+            dstManager.AddComponentData(entity, new UnitsPerLine() {Value = MinRow});
+            dstManager.AddComponentData(entity, new UnitsLastLine() {Value = MinRow});
+            dstManager.AddComponentData(entity, new NumberLine() {Value = (int)math.ceil(BaseNumUnits / (float)MinRow)});
+            
             //float formationNumLine = BaseNumUnits / (float)MinRow;
             //int totalLine = (int)math.ceil(BaseNumUnits / (float)MinRow);
             dstManager.AddComponentData(entity, new Data_NumLine() {Value = (int)math.ceil(BaseNumUnits / (float)MinRow)});

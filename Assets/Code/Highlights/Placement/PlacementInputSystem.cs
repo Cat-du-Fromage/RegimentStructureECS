@@ -43,7 +43,7 @@ namespace KaizerWald
 
         private List<Shared_RegimentEntity> sharedRegiments;
 
-        private bool IsDrag => distancesq(EndMousePosition,StartMousePosition) >= 2;
+        private bool IsDrag => distancesq(StartMousePosition,EndMousePosition) >= 2;
         //private bool IsDrag => lengthsq(EndMousePosition - StartMousePosition) >= 32;
         private float3 StartMousePosition => GetSingleton<Data_StartPlacement>().Value;
         private float3 EndMousePosition => GetSingleton<Data_EndPlacement>().Value;
@@ -88,7 +88,8 @@ namespace KaizerWald
                 typeof(Data_LineDirection),
                 typeof(Data_ColumnDirection),
                 typeof(Data_LookRotation),
-                typeof(Filter_PlacementUpdate)
+                typeof(Filter_PlacementUpdate),
+                typeof(Buffer_CachedUnitsPerLine)
                 //typeof(Data_TerrainCollisionFilter) //WE CANT SET the filter on the editor this way...
             );
             placementManager = EntityManager.CreateEntity(placementInputArchetype);
@@ -100,7 +101,7 @@ namespace KaizerWald
             cameraInput = GetSingletonEntity<Tag_Camera>();
             playerCamera = EntityManager.GetComponentData<Authoring_PlayerCamera>(cameraInput).Value;
             controls = EntityManager.GetComponentData<Authoring_PlayerControls>(cameraInput).Value;
-            
+
             if (!controls.DynamicPlacement.enabled)
             {
                 controls.DynamicPlacement.Enable();
@@ -108,6 +109,8 @@ namespace KaizerWald
             }
             
             mouse = Mouse.current;
+            
+            GetBuffer<Buffer_CachedUnitsPerLine>(placementManager).EnsureCapacity(regimentsQuery.CalculateEntityCount());
         }
         
         protected override void OnUpdate()
@@ -166,8 +169,19 @@ namespace KaizerWald
 
         private void OnCancel()
         {
+            SetNewFormations();
             SetSingleton(new Check_TerrainHit() { IsValid = false });
             DisableAllPlacements();
+        }
+
+        private void SetNewFormations()
+        {
+            DynamicBuffer<Buffer_CachedUnitsPerLine> buffer = GetBuffer<Buffer_CachedUnitsPerLine>(placementManager);
+            for (int i = 0; i < buffer.Length; i++)
+            {
+                Entity regiment = buffer[i].regiment;
+                SetComponent(regiment, new UnitsPerLine(){Value = buffer[i].Value});
+            }
         }
 
         /// <summary>
@@ -228,7 +242,7 @@ namespace KaizerWald
                 NativeArray<Entity> regiments = regimentsQuery.ToEntityArray(Allocator.Temp);
                 foreach (Entity regiment in regiments)
                 {
-                    Shared_RegimentEntity filter = new Shared_RegimentEntity() { Value = regiment };
+                    Shared_RegimentEntity filter = new () { Value = regiment };
                     disabledPlacementsQuery.SetSharedComponentFilter(filter);
                     EntityManager.RemoveComponent<DisableRendering>(disabledPlacementsQuery);
                     if (HasComponent<Tag_Move>(regiment)) continue;

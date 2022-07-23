@@ -119,9 +119,11 @@ namespace KaizerWald
             EntityManager.AddComponent<Data_RegimentAnimationPlayed>(regiments);
             EntityManager.AddComponent<Data_LookRotation>(regiments);
             
+            
             for (int i = 0; i < regiments.Length; i++)
             {
                 EntityManager.AddBuffer<Buffer_Units>(regiments[i]);
+                //EntityManager.AddComponents(regiments[i],FormationUtility.GetFormationComponents());
             }
         }
 

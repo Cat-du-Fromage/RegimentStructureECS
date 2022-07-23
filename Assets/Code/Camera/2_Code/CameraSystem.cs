@@ -113,11 +113,11 @@ namespace KaizerWaldCode.RTTCamera
                 return Mathf.Clamp(lfAngle, lfMin, lfMax);
             }
             
-            Quaternion RotateFWorld(Quaternion rotation, float x, float y, float z)
+            Quaternion RotateFWorld(Quaternion rot, float x, float y, float z)
             {
                 Quaternion eulerRot = Quaternion.Euler(x, y, z);
-                rotation *= (Quaternion.Inverse(rotation) * eulerRot * rotation);
-                return rotation;
+                rot *= (Quaternion.Inverse(rotation) * eulerRot * rotation);
+                return rot;
             }
             
             Quaternion RotateFSelf(Quaternion localRotation, float x, float y, float z)

@@ -75,7 +75,7 @@ namespace KaizerWald
 
         public unsafe void Execute(int index)
         {
-            ClosestHitCollector<ColliderCastHit> hitCollector = new ClosestHitCollector<ColliderCastHit>(4);
+            ClosestHitCollector<ColliderCastHit> hitCollector = new (4);
             bool isHit = world.SphereCastCustom(origin, radius, direction, distance, ref hitCollector, filter);
             results[index] = hitCollector.ClosestHit.Entity;
         }

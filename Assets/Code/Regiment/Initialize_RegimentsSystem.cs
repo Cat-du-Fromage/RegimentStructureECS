@@ -52,7 +52,7 @@ namespace KaizerWald
                 Entity unit = units[i];
                 PhysicsUtils.AddToCollisionFilter(EntityManager, unit, HasComponent<Tag_Player>(regiment) ? 3 : 4);
 
-                EntityManager.SetName(unit, $"Unit_Regiment_{regiment.Index}_{i}");
+                EntityManager.SetName(unit, $"Unit_Regiment{regiment.Index}_{unit.Index}_RegId{i}");
                 EntityManager.SetEnabled(unit, true);
                 //EntityManager.SetComponentData(unit, new Data_IndexInRegiment(){Value = i});
                 
@@ -79,6 +79,8 @@ namespace KaizerWald
             Rotation rot = GetComponent<Rotation>(regiment);
             for (int i = 0; i < placements.Length; i++)
             {
+                Entity placement = placements[i];
+                EntityManager.SetName(placement, $"Placement_R{regiment.Index}_{placement.Index}_IdInReg{i}");
                 float3 position = GetPositionInRegiment(pos, i, 1, GetComponent<Data_UnitsPerLine>(regiment).Value, signZ, signX);
                 EntityManager.SetComponentData(placements[i], new Translation(){Value = new float3(position.x,0.05f,position.z)});
                 EntityManager.SetComponentData(placements[i], rot);
@@ -97,7 +99,7 @@ namespace KaizerWald
             //Offset to place regiment in the center of the mass
             float offsetX = regimentPosition.x - GetXOffset();
 
-            return new float3(signX*(x * unitSizeX + offsetX), 0f, (signZ*(z * unitSizeX)) + regimentPosition.z);
+            return new float3(signX*(x * unitSizeX + offsetX), 0f, ((z * unitSizeX)) + regimentPosition.z);
             
             float GetXOffset()
             {

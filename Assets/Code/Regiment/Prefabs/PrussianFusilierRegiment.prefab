@@ -50,7 +50,7 @@ MonoBehaviour:
     type: 3}
   Speed: 1
   UnitSize: {x: 1, y: 1, z: 1}
-  BaseNumUnits: 10
+  BaseNumUnits: 40
   MinRow: 5
   MaxRow: 10
   OffsetBetweenUnits: -0.25

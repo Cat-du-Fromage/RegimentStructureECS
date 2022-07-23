@@ -71,12 +71,12 @@ namespace KaizerWald
 
             using NativeArray<Entity> regimentSelected2 = regimentSelected.ToNativeArray(Allocator.TempJob);
             
-            NativeArray<FormationLineData> formationsData = FillNewFormation(regimentSelected2);
+            using NativeArray<FormationLineData> formationsData = FillNewFormation(regimentSelected2);
             float3 lineDirection    = GetComponent<Data_LineDirection>(placementManager).Value;
             float3 columnDirection  = GetComponent<Data_ColumnDirection>(placementManager).Value;
             float3 startPosition    = GetComponent<Data_StartPlacement>(placementManager).Value;
             quaternion lookRotation = GetComponent<Data_LookRotation>(placementManager).Value;
-
+            
             for (int regimentIndex = 0; regimentIndex < regimentSelected2.Length; regimentIndex++)
             {
                 placementQuery.SetSharedComponentFilter(new Shared_RegimentEntity(){Value = regimentSelected2[regimentIndex]});
@@ -91,16 +91,40 @@ namespace KaizerWald
                 };
                 job.ScheduleParallel(placementQuery);
             }
-            formationsData.Dispose(Dependency);
 
-            for (int regimentIndex = 0; regimentIndex < regimentSelected2.Length; regimentIndex++)
+            Dependency.Complete();
+            JCacheNewFormation job2 = new JCacheNewFormation
             {
-                
-            }
-            
+                RegimentSelected = regimentSelected2,
+                FormationsData = formationsData
+            };
+            job2.Run();
+
+            //formationsData.Dispose();
+
             SetSingleton(new Filter_PlacementUpdate() { DidChange = false });
         }
-        
+
+        [BurstCompile(CompileSynchronously = true)]
+        [WithAll(typeof(Tag_PlacementManager))]
+        private partial struct JCacheNewFormation : IJobEntity
+        {
+            public NativeArray<Entity> RegimentSelected;
+            public NativeArray<FormationLineData> FormationsData;
+            public void Execute(ref DynamicBuffer<Buffer_CachedUnitsPerLine>  unitsPerLine)
+            {
+                unitsPerLine.Clear();
+                for (int i = 0; i < FormationsData.Length; i++)
+                {
+                    unitsPerLine.Add(new Buffer_CachedUnitsPerLine
+                    {
+                        regiment = RegimentSelected[i],
+                        Value = FormationsData[i].UnitsPerLine
+                    });
+                }
+            }
+        }
+
         public int NumUnitsToAdd(NativeArray<Entity> regimentSelected, in float3 startPosition, in float3 endPosition)
         {
             float lineLength = length(endPosition - startPosition);
@@ -128,9 +152,9 @@ namespace KaizerWald
             for (int i = 0; i < selectedRegiments.Length; i++)
             {
                 Entity regiment = selectedRegiments[i];
-                int numUnit = GetComponent<Data_NumUnits>(regiment).Value;
-                int minLine = GetComponent<Data_MinLine>(regiment).Value;
-                int maxLine = GetComponent<Data_MaxLine>(regiment).Value;
+                int numUnit = GetComponent<NumberUnits>(regiment).Value;
+                int minLine = GetComponent<MinLine>(regiment).Value;
+                int maxLine = GetComponent<MaxLine>(regiment).Value;
                 
                 int newNumUnitPerLine = min(maxLine, minLine + numPerRegiment);
 
@@ -153,7 +177,7 @@ namespace KaizerWald
             for (int i = 0; i < selectedRegiments.Length; i++)
             {
                 float spaceBetweenUnitX = GetComponent<Data_SpaceBetweenUnitX>(selectedRegiments[i]).Value;
-                float minLine = GetComponent<Data_MinLine>(selectedRegiments[i]).Value;
+                float minLine = GetComponent<MinLine>(selectedRegiments[i]).Value;
                 float unitSizeX = GetComponent<Data_UnitSize>(selectedRegiments[i]).Value.x;
 
                 min += spaceBetweenUnitX * minLine;

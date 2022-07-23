@@ -20,6 +20,7 @@ namespace KaizerWald
     [UpdateInGroup(typeof(InitializationSystemGroup))]
     public partial class TEST_KillUnitSystem : SystemBase
     {
+        private EntityQuery regimentQ;
         private BeginInitializationEntityCommandBufferSystem beginInitSystem;
         
         private readonly float screenWidth = Screen.width;
@@ -36,6 +37,7 @@ namespace KaizerWald
             beginInitSystem = World.GetOrCreateSystem<BeginInitializationEntityCommandBufferSystem>();
             buildPhysicsWorld = World.GetOrCreateSystem<BuildPhysicsWorld>();
             unitHit = new NativeReference<Entity>(Allocator.Persistent);
+            regimentQ = GetEntityQuery(typeof(Tag_Regiment));
         }
         
         protected override void OnStartRunning()
@@ -48,7 +50,29 @@ namespace KaizerWald
 
         protected override void OnUpdate()
         {
+            Kill3Units();
             KillUnitTest();
+        }
+
+        private void Kill3Units()
+        {
+            if (regimentQ.IsEmpty) return;
+            if (!Keyboard.current.kKey.wasPressedThisFrame) return;
+            using NativeArray<Entity> regiments = regimentQ.ToEntityArray(Allocator.Temp);
+            
+            int numUnits = GetComponent<NumberUnits>(regiments[0]).Value;
+            if (numUnits < 3) return;
+
+            NativeArray<Entity> unitsToDestroy = new NativeArray<Entity>(3, Allocator.Temp);
+            DynamicBuffer<Buffer_Units> units = GetBuffer<Buffer_Units>(regiments[0]);
+            for (int i = 0; i < 3; i++)
+            {
+                unitsToDestroy[i] = units[i].Value;
+            }
+            
+            EntityCommandBuffer ecb = beginInitSystem.CreateCommandBuffer();
+            ecb.DestroyEntity(unitsToDestroy);
+            beginInitSystem.AddJobHandleForProducer(Dependency);
         }
 
         private void KillUnitTest()
@@ -57,6 +81,11 @@ namespace KaizerWald
             if (!Keyboard.current.leftShiftKey.isPressed || !mouse.leftButton.wasReleasedThisFrame) return;
             if (ScheduleSingleRaycast(mouse.position.ReadValue()) == Entity.Null) return;
             EntityCommandBuffer ecb = beginInitSystem.CreateCommandBuffer();
+            
+            //Entity regiment = GetComponent<Data_Regiment>(unitHit.Value).Value;
+            //int numUnit = GetComponent<NumberUnits>(regiment).Value;
+            //SetComponent(regiment, new NumberUnits(){Value = numUnit-1});
+            
             ecb.DestroyEntity(unitHit.Value);
             beginInitSystem.AddJobHandleForProducer(Dependency);
         }

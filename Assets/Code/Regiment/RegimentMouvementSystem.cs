@@ -61,7 +61,7 @@ namespace KaizerWald
             EntityManager.RemoveComponent<Tag_Move>(regiment);
         }
 
-
+        //ATTENTION : [EntityInQueryIndex] int entityInQueryIndex n'est pas forcément dans l'ordre!
         [BurstCompile(CompileSynchronously = true)]
         [WithAll(typeof(Tag_Unit),typeof(Translation),typeof(Data_AnimationPlayed))]
         public partial struct JMoveUnits : IJobEntity
@@ -72,10 +72,10 @@ namespace KaizerWald
             [ReadOnly] public NativeArray<float3> Destinations;
             [WriteOnly] public NativeCounter.ParallelWriter UnitArrivedCounter;
             
-            public void Execute([EntityInQueryIndex] int entityInQueryIndex, ref Translation position, ref Rotation rotation, ref Data_AnimationPlayed animationToPlay)
+            public void Execute(ref Translation position, ref Rotation rotation, ref Data_AnimationPlayed animationToPlay, in Data_IndexInRegiment id)
             {
-                float3 destination = Destinations[entityInQueryIndex];
-                float timeSpeed = DeltaTime * Speed;
+                float3 destination = Destinations[id.Value];
+                float timeSpeed = DeltaTime * Speed * 4;
                 float dst = distance(destination, position.Value);
 
                 if (dst <= 0.06f) // NEED FOR COUNTER
