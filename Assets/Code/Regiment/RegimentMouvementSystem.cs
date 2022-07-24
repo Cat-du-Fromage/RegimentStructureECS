@@ -59,6 +59,7 @@ namespace KaizerWald
         {
             if (counter.Count != unitsMovingQuery.CalculateEntityCount()) return;
             EntityManager.RemoveComponent<Tag_Move>(regiment);
+            SetComponent(regiment, new Data_RegimentAnimationPlayed(){Value = FusilierClips.Idle});
         }
 
         //ATTENTION : [EntityInQueryIndex] int entityInQueryIndex n'est pas forcément dans l'ordre!

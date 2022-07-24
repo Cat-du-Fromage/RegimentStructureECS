@@ -31,6 +31,11 @@ namespace KaizerWald
 
         protected override void OnStartRunning()
         {
+            
+        }
+        
+        protected override void OnUpdate()
+        {
             NativeArray<Entity> factories = factoryQuery.ToEntityArray(Allocator.Temp);
             
             for (int i = 0; i < factories.Length; i++)
@@ -67,13 +72,8 @@ namespace KaizerWald
                 }
                 
             }
-            //EntityManager.DestroyEntity(factoryQuery);
-            Enabled = false;
-        }
-        
-        protected override void OnUpdate()
-        {
-            return;
+            EntityManager.DestroyEntity(factoryQuery);
+            //Enabled = false;
         }
 
         protected override void OnStopRunning()
@@ -91,7 +91,7 @@ namespace KaizerWald
                 
                 //DIFFERENCE PLAYER - ENEMY
                 int unitPerLine = isPlayer ? regClass.MinRow : regClass.MaxRow;
-                SetComponent(regiments[regimentIndex], new Data_UnitsPerLine(){Value = unitPerLine});
+                SetComponent(regiments[regimentIndex], new UnitsPerLine(){Value = unitPerLine});
                 
                 SetComponent(regiments[regimentIndex], new Translation(){Value = position});
                 xOffset += (unitPerLine + 4) * regClass.SpaceBetweenUnitsX;

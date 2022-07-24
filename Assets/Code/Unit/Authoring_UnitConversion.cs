@@ -9,7 +9,7 @@ namespace KaizerWald
     {
         public void Convert(Entity entity, EntityManager dstManager, GameObjectConversionSystem conversionSystem)
         {
-            dstManager.AddComponent<Tag_Uninitialize>(entity);
+            //dstManager.AddComponent<Tag_Uninitialize>(entity);
             dstManager.AddComponent<Tag_Unit>(entity);
             //dstManager.AddComponent<Data_Regiment>(entity);
         }

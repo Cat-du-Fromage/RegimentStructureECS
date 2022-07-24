@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Entities.Hybrid.Internal;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -28,7 +27,7 @@ namespace KaizerWald
     public class Conversion_RegimentFactory : MonoBehaviour, IConvertGameObjectToEntity, IDeclareReferencedPrefabs
     {
         public bool IsPlayer;
-        [SerializeField] private RegimentOrders[] Orders;
+        public RegimentOrders[] Orders;
         
         public void Convert(Entity entity, EntityManager dstManager, GameObjectConversionSystem conversionSystem)
         {

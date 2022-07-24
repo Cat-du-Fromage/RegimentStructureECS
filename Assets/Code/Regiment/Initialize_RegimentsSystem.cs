@@ -28,12 +28,12 @@ namespace KaizerWald
             .WithStoreEntityQueryInField(ref unInitializeRegiment)
             .ForEach((Entity regiment ,in Data_RegimentClass regimentClass, in Data_PrefabsRegiment prefabs, in Translation position, in Data_SpawnAxeDirection axis) =>
             {
+                DynamicBuffer<Buffer_Destinations> destinations = EntityManager.AddBuffer<Buffer_Destinations>(regiment);
+                destinations.EnsureCapacity(regimentClass.BaseNumUnits);
+                
                 GetBuffer<Buffer_Units>(regiment).EnsureCapacity(regimentClass.BaseNumUnits);
                 CreateUnits(regiment, regimentClass, prefabs, position.Value, axis);
                 CreatePlacements(regiment, regimentClass, prefabs, position.Value, axis);
-                
-                DynamicBuffer<Buffer_Destinations> destinations = EntityManager.AddBuffer<Buffer_Destinations>(regiment);
-                destinations.EnsureCapacity(regimentClass.BaseNumUnits);
             }).Run();
             EntityManager.RemoveComponent<Tag_Uninitialize>(unInitializeRegiment);
             Enabled = false;
@@ -56,7 +56,7 @@ namespace KaizerWald
                 EntityManager.SetEnabled(unit, true);
                 //EntityManager.SetComponentData(unit, new Data_IndexInRegiment(){Value = i});
                 
-                float3 position = GetPositionInRegiment(pos, i, 1, GetComponent<Data_UnitsPerLine>(regiment).Value, signZ, signX);
+                float3 position = GetPositionInRegiment(pos, i, 1, GetComponent<UnitsPerLine>(regiment).Value, signZ, signX);
                 EntityManager.SetComponentData(unit, new Translation(){Value = position});
                 EntityManager.SetComponentData(unit, rot);
                 //TODO : FIND A WAY TO DO THIS IN => "Initialize_UnitsSystem"
@@ -65,6 +65,7 @@ namespace KaizerWald
                 //SYSTEM STATE COMPONENT
                 EntityManager.AddComponentData(unit, new Data_IndexInRegiment() { Value = i });
                 EntityManager.AddComponentData(unit, new Data_Regiment() { Value = regiment });
+                EntityManager.GetBuffer<Buffer_Destinations>(regiment).Add(new Buffer_Destinations(){Position = position});
             }
         }
 
@@ -81,7 +82,7 @@ namespace KaizerWald
             {
                 Entity placement = placements[i];
                 EntityManager.SetName(placement, $"Placement_R{regiment.Index}_{placement.Index}_IdInReg{i}");
-                float3 position = GetPositionInRegiment(pos, i, 1, GetComponent<Data_UnitsPerLine>(regiment).Value, signZ, signX);
+                float3 position = GetPositionInRegiment(pos, i, 1, GetComponent<UnitsPerLine>(regiment).Value, signZ, signX);
                 EntityManager.SetComponentData(placements[i], new Translation(){Value = new float3(position.x,0.05f,position.z)});
                 EntityManager.SetComponentData(placements[i], rot);
                 EntityManager.AddSharedComponentData(placements[i], new Shared_RegimentEntity(){Value = regiment});
@@ -99,7 +100,7 @@ namespace KaizerWald
             //Offset to place regiment in the center of the mass
             float offsetX = regimentPosition.x - GetXOffset();
 
-            return new float3(signX*(x * unitSizeX + offsetX), 0f, ((z * unitSizeX)) + regimentPosition.z);
+            return new float3(signX*(x * unitSizeX + offsetX), 0f, -signZ*(z * unitSizeX) + regimentPosition.z);
             
             float GetXOffset()
             {

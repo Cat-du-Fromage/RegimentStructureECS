@@ -7,7 +7,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
-
+using UnityEngine.Rendering.VirtualTexturing;
 using static Unity.Mathematics.math;
 using Random = Unity.Mathematics.Random;
 using static Unity.Mathematics.Random;
@@ -39,7 +39,6 @@ namespace KaizerWald
             {
                 int animationIndex = (int)animationToPlay.Value;
                 ref SkeletonClip clip = ref singleClip.blob.Value.clips[animationIndex];
-                
                 float rand = CreateFromIndex((uint)entityInQueryIndex).NextFloat(0.6f, 1f);
                 float clipTime = clip.LoopToClipTime(t * rand);
                 
@@ -55,10 +54,9 @@ namespace KaizerWald
             {
                 int animationIndex = (int)animationToPlay.Value;
                 ref SkeletonClip clip = ref singleClip.blob.Value.clips[animationIndex];
-                
                 float rand = CreateFromIndex((uint)entityInQueryIndex).NextFloat(0.6f, 1f);
                 float clipTime = clip.LoopToClipTime(Time * rand);
-                
+                //Debug.Log($"Time {clipTime}; Duration = {clip.duration}");
                 clip.SamplePose(btrBuffer, hierarchyRef.blob, clipTime);
             }
         }

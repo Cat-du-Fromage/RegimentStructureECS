@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using KWUtils;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -121,7 +122,7 @@ namespace KaizerWald
                 NativeArray<Entity> units = GetEntityQuery(typeof(ParticleSystem)).ToEntityArray(Allocator.Temp);
                 for (int i = 0; i < units.Length; i++)
                 {
-                   EntityManager.GetComponentObject<ParticleSystem>(units[i]).Play();
+                    EntityManager.GetComponentObject<ParticleSystem>(units[i]).Play();
                 }
             }
             */
@@ -202,6 +203,7 @@ namespace KaizerWald
                 NativeArray<Translation> t = enabledPlacementsQuery.ToComponentDataArray<Translation>(Allocator.Temp);
                 GetBuffer<Buffer_Destinations>(regiment).CopyFrom(t.Reinterpret<Buffer_Destinations>());
                 SetComponent(regiment, GetComponent<Data_LookRotation>(placementManager));
+                SetComponent(regiment, new Data_RegimentAnimationPlayed(){Value = FusilierClips.Walk});
             }
             enabledPlacementsQuery.ResetFilter();
             EntityManager.AddComponent<Tag_Move>(regiments);
@@ -216,7 +218,7 @@ namespace KaizerWald
             {
                 disabledPlacementsQuery.SetSharedComponentFilter(new Shared_RegimentEntity(){Value = regiment});
                 EntityManager.RemoveComponent<DisableRendering>(disabledPlacementsQuery);
-                SetComponent(regiment, new Data_RegimentAnimationPlayed(){Value = FusilierClips.Walk});
+                //SetComponent(regiment, new Data_RegimentAnimationPlayed(){Value = FusilierClips.Walk});
             }
             disabledPlacementsQuery.ResetFilter();
         }
