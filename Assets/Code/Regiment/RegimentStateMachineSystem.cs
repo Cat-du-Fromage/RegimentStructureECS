@@ -27,6 +27,7 @@ namespace KaizerWald
         protected override void OnUpdate()
         {
             NativeArray<Entity> regiments = regimentsWithOrderQuery.ToEntityArray(Allocator.Temp);
+            
             foreach (Entity regiment in regiments)
             {
                 unitsWithOrderQuery.SetSharedComponentFilter(new Shared_RegimentEntity(){Value = regiment});
@@ -37,6 +38,7 @@ namespace KaizerWald
                 };
                 job.ScheduleParallel(unitsWithOrderQuery);
             }
+            
             EntityManager.RemoveComponent<State_NewOrder>(regimentsWithOrderQuery);
         }
     }

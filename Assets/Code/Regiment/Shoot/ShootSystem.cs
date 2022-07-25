@@ -9,6 +9,13 @@ using UnityEngine.InputSystem;
 
 namespace KaizerWald
 {
+    //Problème:
+    // Besoin de faire cycler Feu - Recharge
+    // Donc : Doit repérer quand "a tiré" => when: clip.LoopToClipTime(time) > clip.duration/2f
+    // if (clip.LoopToClipTime(time) > clip.duration/2f) then hasShoot = true;
+    // if (clip.LoopToClipTime(time) < clip.duration/2f && hasShoot == true) then ChangeState(Reload)
+    
+    
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     public partial class ShootSystem : SystemBase
     {

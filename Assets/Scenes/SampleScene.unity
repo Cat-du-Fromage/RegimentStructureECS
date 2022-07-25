@@ -155,7 +155,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   IsPlayer: 1
   Orders:
-  - number: 1
+  - number: 2
     regimentPrefab: {fileID: 8702607822139080616, guid: 6b2ef7e97c8bbc840ba98aaa32b2fe38,
       type: 3}
 --- !u!4 &243250964
@@ -1119,7 +1119,7 @@ PrefabInstance:
     - target: {fileID: 6416254674000732380, guid: 75863e54d4d0a6b46944cd7c2371150c,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 75863e54d4d0a6b46944cd7c2371150c, type: 3}

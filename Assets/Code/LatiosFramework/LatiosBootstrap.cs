@@ -25,12 +25,16 @@ namespace KaizerWald
     {
         public unsafe bool Initialize(string defaultWorldName)
         {
+            //World world = World.DefaultGameObjectInjectionWorld;
             LatiosWorld world = new LatiosWorld(defaultWorldName);
             World.DefaultGameObjectInjectionWorld = world;
 
             List<Type> systems = new List<Type>(DefaultWorldInitialization.GetAllSystems(WorldSystemFilterFlags.Default));
+            
             BootstrapTools.InjectSystems(systems, world, world.simulationSystemGroup);
-
+            //SimulationSystemGroup simulationSystemGroup = world.GetExistingSystem<SimulationSystemGroup>();
+            //BootstrapTools.InjectSystems(systems, world, simulationSystemGroup);
+            
             CoreBootstrap.InstallImprovedTransforms(world);
             //Latios.Myri.MyriBootstrap.InstallMyri(world);
             Latios.Kinemation.KinemationBootstrap.InstallKinemation(world);

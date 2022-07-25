@@ -24,27 +24,6 @@ namespace KaizerWald
             new JOptimizedMeshMultiClips() { Time = t }.ScheduleParallel();
             //OptimizedMeshMultiClips(t);
         }
-
-        private void OptimizedMeshMultiClips(float t)
-        {
-            Entities
-            .WithBurst(FloatMode.Default, FloatPrecision.Standard, true)
-            .WithName("MultiClipPlayerSystem_OptimizedMesh")
-            .WithAll<Tag_Unit>()
-            .ForEach((int entityInQueryIndex,
-            ref DynamicBuffer<OptimizedBoneToRoot> btrBuffer, 
-            in OptimizedSkeletonHierarchyBlobReference hierarchyRef, 
-            in SingleClip singleClip,
-            in Data_AnimationPlayed animationToPlay) =>
-            {
-                int animationIndex = (int)animationToPlay.Value;
-                ref SkeletonClip clip = ref singleClip.blob.Value.clips[animationIndex];
-                float rand = CreateFromIndex((uint)entityInQueryIndex).NextFloat(0.6f, 1f);
-                float clipTime = clip.LoopToClipTime(t * rand);
-                
-                clip.SamplePose(btrBuffer, hierarchyRef.blob, clipTime);
-            }).ScheduleParallel();
-        }
         
         [BurstCompile(CompileSynchronously = true)]
         private partial struct JOptimizedMeshMultiClips : IJobEntity
@@ -73,6 +52,26 @@ namespace KaizerWald
                 {
                     float rand = Random.CreateFromIndex((uint)entityInQueryIndex).NextFloat(0.3f, 1f);
                     ref SkeletonClip clip = ref singleClip.blob.Value.clips[0];
+                    float clipTime = clip.LoopToClipTime(t * rand);
+                    clip.SamplePose(btrBuffer, hierarchyRef.blob, clipTime);
+                }).ScheduleParallel();
+        }
+        
+        private void OptimizedMeshMultiClips(float t)
+        {
+            Entities
+                .WithBurst(FloatMode.Default, FloatPrecision.Standard, true)
+                .WithName("MultiClipPlayerSystem_OptimizedMesh")
+                .WithAll<Tag_Unit>()
+                .ForEach((int entityInQueryIndex,
+                    ref DynamicBuffer<OptimizedBoneToRoot> btrBuffer, 
+                    in OptimizedSkeletonHierarchyBlobReference hierarchyRef, 
+                    in SingleClip singleClip,
+                    in Data_AnimationPlayed animationToPlay) =>
+                {
+                    int animationIndex = (int)animationToPlay.Value;
+                    ref SkeletonClip clip = ref singleClip.blob.Value.clips[animationIndex];
+                    float rand = CreateFromIndex((uint)entityInQueryIndex).NextFloat(0.6f, 1f);
                     float clipTime = clip.LoopToClipTime(t * rand);
                     clip.SamplePose(btrBuffer, hierarchyRef.blob, clipTime);
                 }).ScheduleParallel();
